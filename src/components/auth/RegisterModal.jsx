@@ -55,7 +55,8 @@ export function RegisterModal({ isOpen, onClose }) {
             userAttributes: {
               email: formData.email,
               name: formData.name
-            }
+            },
+            autoSignIn: false
           }
         });
         console.log('SignUp result:', result);

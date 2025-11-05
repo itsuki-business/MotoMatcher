@@ -85,7 +85,8 @@ export function HomeForRegister() {
           query: queries.listPhotographers,
           variables: {
             filter: { user_type: { eq: 'photographer' } }
-          }
+          },
+          authMode: 'userPool'
         });
         setPhotographers(result.data.listUsers.items);
       }

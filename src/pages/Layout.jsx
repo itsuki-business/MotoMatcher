@@ -134,7 +134,7 @@ export function Layout() {
           </Link>
 
           {/* Desktop Navigation */}
-          {user && appUser && (
+          {user && (
             <nav className="hidden md:flex items-center gap-6">
               <Link
                 to="/home-for-register"
@@ -199,10 +199,10 @@ export function Layout() {
                     <Avatar className="w-8 h-8">
                       <AvatarImage src={profileImageUrl} />
                       <AvatarFallback className="bg-blue-100 text-blue-600">
-                        {appUser.nickname?.[0] || '?'}
+                        {appUser?.nickname?.[0] || user.username?.[0] || '?'}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{appUser.nickname}</span>
+                    <span className="font-medium">{appUser?.nickname || user.username || 'ユーザー'}</span>
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -221,7 +221,7 @@ export function Layout() {
           )}
 
           {/* Mobile Menu Button */}
-          {user && appUser && (
+          {user && (
             <button
               className="md:hidden"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -236,7 +236,7 @@ export function Layout() {
         </div>
 
         {/* Mobile Navigation */}
-        {user && appUser && mobileMenuOpen && (
+        {user && mobileMenuOpen && (
           <div className="md:hidden border-t bg-white">
             <nav className="container py-4 space-y-2">
               <Link

@@ -14,7 +14,8 @@ export function RegisterModal({ isOpen, onClose }) {
     email: '',
     password: '',
     confirmPassword: '',
-    name: ''
+    name: '',
+    user_type: ''
   });
   const [confirmCode, setConfirmCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,6 +31,11 @@ export function RegisterModal({ isOpen, onClose }) {
     setError('');
 
     // Validation
+    if (!formData.user_type) {
+      setError('ユーザータイプを選択してください');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('パスワードが一致しません');
       return;
@@ -93,11 +99,36 @@ export function RegisterModal({ isOpen, onClose }) {
           username: formData.email,
           password: formData.password
         });
+        
+        // セッション確立を待つ
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // プロフィール自動作成
+        const { getCurrentUser } = await import('aws-amplify/auth');
+        const currentUser = await getCurrentUser();
+        const { generateClient } = await import('aws-amplify/api');
+        const client = generateClient();
+        
+        try {
+          const { createUser } = await import('@/graphql/mutations');
+          await client.graphql({
+            query: createUser,
+            variables: {
+              input: {
+                id: currentUser.userId,
+                email: formData.email,
+                user_type: formData.user_type
+              }
+            }
+          });
+        } catch (createError) {
+          console.error('Create profile error:', createError);
+        }
       }
 
       // ログイン成功後はホーム画面へ
       handleClose();
-      navigate('/home-for-register');
+      window.location.href = '/home-for-register';
     } catch (err) {
       console.error('Confirm error:', err);
       setError(err.message || '確認に失敗しました');
@@ -112,7 +143,8 @@ export function RegisterModal({ isOpen, onClose }) {
       email: '',
       password: '',
       confirmPassword: '',
-      name: ''
+      name: '',
+      user_type: ''
     });
     setConfirmCode('');
     setError('');
@@ -144,6 +176,38 @@ export function RegisterModal({ isOpen, onClose }) {
                   required
                   disabled={loading}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>ユーザータイプ *</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleInputChange('user_type', 'client')}
+                    className={`p-4 rounded-lg border-2 transition-colors ${
+                      formData.user_type === 'client'
+                        ? 'border-blue-600 bg-blue-50 text-blue-600'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    disabled={loading}
+                  >
+                    <div className="font-semibold">ライダー</div>
+                    <div className="text-xs mt-1">撮影依頼</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleInputChange('user_type', 'photographer')}
+                    className={`p-4 rounded-lg border-2 transition-colors ${
+                      formData.user_type === 'photographer'
+                        ? 'border-blue-600 bg-blue-50 text-blue-600'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    disabled={loading}
+                  >
+                    <div className="font-semibold">フォトグラファー</div>
+                    <div className="text-xs mt-1">撮影受注</div>
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-2">

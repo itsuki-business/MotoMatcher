@@ -55,8 +55,7 @@ export function RegisterModal({ isOpen, onClose }) {
             userAttributes: {
               email: formData.email,
               name: formData.name
-            },
-            autoSignIn: false
+            }
           }
         });
         console.log('SignUp result:', result);
@@ -81,20 +80,14 @@ export function RegisterModal({ isOpen, onClose }) {
         await mockAuthService.confirmSignUp(formData.email, confirmCode);
       } else {
         // AWS Cognito implementation
-        const { confirmSignUp, signIn } = await import('aws-amplify/auth');
+        const { confirmSignUp } = await import('aws-amplify/auth');
         await confirmSignUp({
           username: formData.email,
           confirmationCode: confirmCode
         });
-        
-        // Sign in after confirmation
-        await signIn({
-          username: formData.email,
-          password: formData.password
-        });
       }
 
-      // Navigate to first-time profile setup (already signed in)
+      // Navigate to first-time profile setup (auto signed in)
       handleClose();
       navigate('/first-time-profile-setup');
     } catch (err) {

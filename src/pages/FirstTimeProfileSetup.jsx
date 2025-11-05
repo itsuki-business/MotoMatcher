@@ -78,36 +78,13 @@ export function FirstTimeProfileSetup() {
     setError('');
 
     try {
-      // Check if already signed in
+      // Get current user (already signed in)
       let currentUser;
-      let alreadySignedIn = false;
-      
       if (useMock) {
         currentUser = await mockAuthService.getCurrentUser();
-        alreadySignedIn = !!currentUser;
       } else {
         const { getCurrentUser } = await import('aws-amplify/auth');
-        try {
-          currentUser = await getCurrentUser();
-          alreadySignedIn = true;
-        } catch (err) {
-          alreadySignedIn = false;
-        }
-      }
-
-      // Sign in only if not already signed in
-      if (!alreadySignedIn) {
-        if (useMock) {
-          await mockAuthService.signIn(credentials.email, credentials.password);
-          currentUser = await mockAuthService.getCurrentUser();
-        } else {
-          const { signIn, getCurrentUser } = await import('aws-amplify/auth');
-          await signIn({
-            username: credentials.email,
-            password: credentials.password
-          });
-          currentUser = await getCurrentUser();
-        }
+        currentUser = await getCurrentUser();
       }
 
       if (!currentUser) {

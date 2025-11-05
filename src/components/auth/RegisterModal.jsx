@@ -81,21 +81,22 @@ export function RegisterModal({ isOpen, onClose }) {
         await mockAuthService.confirmSignUp(formData.email, confirmCode);
       } else {
         // AWS Cognito implementation
-        const { confirmSignUp } = await import('aws-amplify/auth');
+        const { confirmSignUp, signIn } = await import('aws-amplify/auth');
         await confirmSignUp({
           username: formData.email,
           confirmationCode: confirmCode
         });
+        
+        // Sign in after confirmation
+        await signIn({
+          username: formData.email,
+          password: formData.password
+        });
       }
 
-      // Navigate to first-time profile setup with credentials
+      // Navigate to first-time profile setup (already signed in)
       handleClose();
-      navigate('/first-time-profile-setup', { 
-        state: { 
-          email: formData.email, 
-          password: formData.password 
-        } 
-      });
+      navigate('/first-time-profile-setup');
     } catch (err) {
       console.error('Confirm error:', err);
       setError(err.message || '確認に失敗しました');

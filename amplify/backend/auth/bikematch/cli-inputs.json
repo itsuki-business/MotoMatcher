@@ -1,0 +1,43 @@
+{
+  "version": "1",
+  "cognitoConfig": {
+    "identityPoolName": "motomatcher_identitypool",
+    "allowUnauthenticatedIdentities": false,
+    "resourceNameTruncated": "bikema",
+    "userPoolName": "motomatcher_userpool",
+    "autoVerifiedAttributes": ["email"],
+    "mfaConfiguration": "OFF",
+    "mfaTypes": [],
+    "smsAuthenticationMessage": "Your authentication code is {####}",
+    "smsVerificationMessage": "Your verification code is {####}",
+    "emailVerificationSubject": "MotoMatcher - 確認コード",
+    "emailVerificationMessage": "MotoMatcherへようこそ！確認コード: {####}",
+    "defaultPasswordPolicy": {
+      "policyName": "default",
+      "minimumLength": 8,
+      "additionalConstraints": []
+    },
+    "passwordPolicyMinLength": 8,
+    "passwordPolicyCharacters": [],
+    "requiredAttributes": ["email", "name"],
+    "aliasAttributes": [],
+    "userpoolClientGenerateSecret": false,
+    "userpoolClientRefreshTokenValidity": 30,
+    "userpoolClientWriteAttributes": ["email", "name"],
+    "userpoolClientReadAttributes": ["email", "name"],
+    "userpoolClientLambdaRole": "bikema",
+    "userpoolClientSetAttributes": false,
+    "sharedId": "bikema",
+    "resourceName": "bikematch",
+    "authSelections": "identityPoolAndUserPool",
+    "useDefault": "manual",
+    "usernameAttributes": ["email"],
+    "userPoolGroups": false,
+    "userPoolGroupList": [],
+    "adminQueries": false,
+    "thirdPartyAuth": false,
+    "authProviders": [],
+    "usernameCaseSensitive": false,
+    "useEnabledMfas": true
+  }
+}

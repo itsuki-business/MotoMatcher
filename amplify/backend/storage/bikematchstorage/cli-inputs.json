@@ -1,0 +1,14 @@
+{
+  "resourceName": "bikematchstorage",
+  "policyUUID": "d416d144",
+  "bucketName": "motomatcher442ee651de5c494891b7c368d9bb068f",
+  "storageAccess": "auth",
+  "guestAccess": [],
+  "authAccess": [
+    "CREATE_AND_UPDATE",
+    "READ",
+    "DELETE"
+  ],
+  "triggerFunction": "NONE",
+  "groupAccess": {}
+}

@@ -1,0 +1,111 @@
+# MotoMatcher GraphQL Schema
+
+enum UserType {
+  client
+  photographer
+}
+
+type User @model @auth(rules: [
+  { allow: owner, operations: [read, update, delete] },
+  { allow: private, operations: [read] }
+]) {
+  id: ID!
+  email: String!
+  nickname: String
+  user_type: UserType
+  prefecture: String
+  bike_maker: String
+  bike_model: String
+  bio: String
+  profile_image: String
+  genres: [String]
+  instagram_url: String
+  twitter_url: String
+  website_url: String
+  minimum_rate: Int
+  rate_details: String
+  owner: String @auth(rules: [{ allow: owner, operations: [read, delete] }])
+  
+  portfolioItems: [Portfolio] @hasMany(indexName: "byPhotographer", fields: ["id"])
+  conversationsAsBiker: [Conversation] @hasMany(indexName: "byBiker", fields: ["id"])
+  conversationsAsPhotographer: [Conversation] @hasMany(indexName: "byPhotographer", fields: ["id"])
+  reviewsGiven: [Review] @hasMany(indexName: "byReviewer", fields: ["id"])
+  reviewsReceived: [Review] @hasMany(indexName: "byReviewee", fields: ["id"])
+  sentMessages: [Message] @hasMany(indexName: "bySender", fields: ["id"])
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Portfolio @model @auth(rules: [
+  { allow: owner, ownerField: "owner" },
+  { allow: private, operations: [read] }
+]) {
+  id: ID!
+  photographer_id: ID! @index(name: "byPhotographer", sortKeyFields: ["createdAt"])
+  image_key: String!
+  title: String
+  description: String
+  owner: String
+  photographer: User @belongsTo(fields: ["photographer_id"])
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Conversation @model @auth(rules: [
+  { allow: owner, ownerField: "biker_id" },
+  { allow: owner, ownerField: "photographer_id" }
+]) {
+  id: ID!
+  biker_id: ID! @index(name: "byBiker", sortKeyFields: ["last_message_at"])
+  photographer_id: ID! @index(name: "byPhotographer", sortKeyFields: ["last_message_at"])
+  biker_name: String
+  photographer_name: String
+  last_message: String
+  last_message_at: AWSDateTime
+  status: String
+  
+  biker: User @belongsTo(fields: ["biker_id"])
+  photographer: User @belongsTo(fields: ["photographer_id"])
+  messages: [Message] @hasMany(indexName: "byConversation", fields: ["id"])
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Message @model @auth(rules: [
+  { allow: owner, ownerField: "sender_id" },
+  { allow: private, operations: [read] }
+]) {
+  id: ID!
+  conversationID: ID! @index(name: "byConversation", sortKeyFields: ["createdAt"])
+  sender_id: ID! @index(name: "bySender", sortKeyFields: ["createdAt"])
+  content: String
+  media_key: String
+  media_type: String
+  is_read: Boolean
+  
+  conversation: Conversation @belongsTo(fields: ["conversationID"])
+  sender: User @belongsTo(fields: ["sender_id"])
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Review @model @auth(rules: [
+  { allow: owner, ownerField: "reviewer_id" },
+  { allow: private, operations: [read] }
+]) {
+  id: ID!
+  reviewer_id: ID! @index(name: "byReviewer", sortKeyFields: ["createdAt"])
+  reviewee_id: ID! @index(name: "byReviewee", sortKeyFields: ["createdAt"])
+  conversation_id: ID
+  rating: Int!
+  comment: String
+  
+  reviewer: User @belongsTo(fields: ["reviewer_id"])
+  reviewee: User @belongsTo(fields: ["reviewee_id"])
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}

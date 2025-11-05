@@ -1,0 +1,11 @@
+{
+  "AppSyncApiName": "motomatcher",
+  "DynamoDBBillingMode": "PAY_PER_REQUEST",
+  "DynamoDBEnableServerSideEncryption": false,
+  "AuthCognitoUserPoolId": {
+    "Fn::GetAtt": [
+      "authmotomatcher6582bd6d",
+      "Outputs.UserPoolId"
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-motomatcher-dev-AuthRole",
+      "UnauthRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/amplify-motomatcher-dev-UnauthRole",
+      "AuthRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/amplify-motomatcher-dev-AuthRole",
+      "Region": "ap-northeast-1",
+      "DeploymentBucketName": "amplify-motomatcher-dev-deployment",
+      "UnauthRoleName": "amplify-motomatcher-dev-UnauthRole",
+      "StackName": "amplify-motomatcher-dev",
+      "StackId": "arn:aws:cloudformation:ap-northeast-1:YOUR_ACCOUNT_ID:stack/amplify-motomatcher-dev/STACK_ID"
+    },
+    "categories": {
+      "auth": {
+        "bikematch": {}
+      },
+      "storage": {
+        "bikematchstorage": {}
+      }
+    }
+  },
+  "motegi": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-motomatcher-motegi-26083-authRole",
+      "UnauthRoleArn": "arn:aws:iam::895843087873:role/amplify-motomatcher-motegi-26083-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::895843087873:role/amplify-motomatcher-motegi-26083-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-motomatcher-motegi-26083-deployment",
+      "UnauthRoleName": "amplify-motomatcher-motegi-26083-unauthRole",
+      "StackName": "amplify-motomatcher-motegi-26083",
+      "StackId": "arn:aws:cloudformation:us-east-1:895843087873:stack/amplify-motomatcher-motegi-26083/5e3939a0-b956-11f0-8701-0ed52ee204bd",
+      "AmplifyAppId": "dww6ijycgqpmd"
+    },
+    "categories": {
+      "auth": {
+        "motomatcher6582bd6d": {}
+      },
+      "api": {
+        "motomatcher": {}
+      },
+      "storage": {
+        "bikematchstorage": {}
+      },
+      "hosting": {
+        "amplifyhosting": {
+          "appId": "dww6ijycgqpmd",
+          "type": "cicd"
+        }
+      }
+    }
+  }
+}

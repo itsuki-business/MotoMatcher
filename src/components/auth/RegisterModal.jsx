@@ -48,7 +48,7 @@ export function RegisterModal({ isOpen, onClose }) {
       } else {
         // AWS Cognito implementation
         const { signUp } = await import('aws-amplify/auth');
-        await signUp({
+        const result = await signUp({
           username: formData.email,
           password: formData.password,
           options: {
@@ -58,6 +58,7 @@ export function RegisterModal({ isOpen, onClose }) {
             }
           }
         });
+        console.log('SignUp result:', result);
       }
 
       setStep('confirm');

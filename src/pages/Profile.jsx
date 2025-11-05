@@ -32,7 +32,7 @@ export function Profile() {
   const [profileImageUrl, setProfileImageUrl] = useState(null);
   const [isNewUser, setIsNewUser] = useState(false);
   const [formData, setFormData] = useState({
-    nickname: '',
+    name: '',
     user_type: '',
     prefecture: '',
     bike_maker: '',
@@ -81,7 +81,7 @@ export function Profile() {
       if (userData) {
         setIsNewUser(false);
         setFormData({
-          nickname: userData.nickname || '',
+          name: userData.name || '',
           user_type: userData.user_type || '',
           prefecture: userData.prefecture || '',
           bike_maker: userData.bike_maker || '',
@@ -261,7 +261,7 @@ export function Profile() {
                 <Avatar className="w-24 h-24">
                   <AvatarImage src={profileImageUrl} />
                   <AvatarFallback className="bg-blue-100 text-blue-600 text-2xl">
-                    {formData.nickname?.[0] || '?'}
+                    {formData.name?.[0] || '?'}
                   </AvatarFallback>
                 </Avatar>
                 <div>
@@ -285,13 +285,26 @@ export function Profile() {
                 </div>
               </div>
 
+              {/* User ID Display */}
+              <div className="space-y-2">
+                <Label>個人 ID</Label>
+                <Input
+                  value={userId || '読み込み中...'}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <p className="text-xs text-muted-foreground">
+                  このIDはCognitoで管理されています
+                </p>
+              </div>
+
               {/* Basic Info */}
               <div className="space-y-2">
-                <Label htmlFor="nickname">ニックネーム *</Label>
+                <Label htmlFor="name">お名前 *</Label>
                 <Input
-                  id="nickname"
-                  value={formData.nickname}
-                  onChange={(e) => handleInputChange('nickname', e.target.value)}
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
                   required
                 />
               </div>

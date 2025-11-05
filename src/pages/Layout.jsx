@@ -199,10 +199,10 @@ export function Layout() {
                     <Avatar className="w-8 h-8">
                       <AvatarImage src={profileImageUrl} />
                       <AvatarFallback className="bg-blue-100 text-blue-600">
-                        {appUser?.nickname?.[0] || user.username?.[0] || '?'}
+                        {appUser?.name?.[0] || '?'}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{appUser?.nickname || user.username || 'ユーザー'}</span>
+                    <span className="font-medium">{appUser?.name || 'ユーザー'}</span>
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

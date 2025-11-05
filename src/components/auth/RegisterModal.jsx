@@ -117,6 +117,7 @@ export function RegisterModal({ isOpen, onClose }) {
               input: {
                 id: currentUser.userId,
                 email: formData.email,
+                name: formData.name,
                 user_type: formData.user_type
               }
             }
@@ -166,7 +167,7 @@ export function RegisterModal({ isOpen, onClose }) {
 
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">お名前</Label>
+                <Label htmlFor="name">お名前 *</Label>
                 <Input
                   id="name"
                   type="text"

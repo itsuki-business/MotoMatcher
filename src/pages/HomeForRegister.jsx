@@ -39,27 +39,6 @@ export function HomeForRegister() {
         return;
       }
 
-      // Check if user profile exists
-      if (useMock) {
-        const user = await mockAPIService.mockGetUser(currentUser.userId);
-        if (!user || !user.nickname) {
-          navigate('/first-time-profile-setup');
-          return;
-        }
-      } else {
-        const { generateClient } = await import('aws-amplify/api');
-        const client = generateClient();
-        const result = await client.graphql({
-          query: queries.getUser,
-          variables: { id: currentUser.userId || currentUser.sub },
-          authMode: 'userPool'
-        });
-        if (!result.data.getUser || !result.data.getUser.nickname) {
-          navigate('/first-time-profile-setup');
-          return;
-        }
-      }
-
       loadPhotographers();
     } catch (error) {
       console.error('Check user profile error:', error);

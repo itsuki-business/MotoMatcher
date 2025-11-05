@@ -80,16 +80,24 @@ export function RegisterModal({ isOpen, onClose }) {
         await mockAuthService.confirmSignUp(formData.email, confirmCode);
       } else {
         // AWS Cognito implementation
-        const { confirmSignUp } = await import('aws-amplify/auth');
+        const { confirmSignUp, signIn } = await import('aws-amplify/auth');
+        
+        // 確認
         await confirmSignUp({
           username: formData.email,
           confirmationCode: confirmCode
         });
+        
+        // 自動ログイン
+        await signIn({
+          username: formData.email,
+          password: formData.password
+        });
       }
 
-      // Navigate to first-time profile setup (auto signed in)
+      // ログイン成功後はホーム画面へ
       handleClose();
-      navigate('/first-time-profile-setup');
+      navigate('/home-for-register');
     } catch (err) {
       console.error('Confirm error:', err);
       setError(err.message || '確認に失敗しました');
@@ -119,7 +127,8 @@ export function RegisterModal({ isOpen, onClose }) {
             <DialogHeader>
               <DialogTitle>新規登録</DialogTitle>
               <DialogDescription>
-                BikeMatchに登録して、フォトグラファーを見つけましょう
+                BikeMatchに登録して、フォトグラファーを見つけましょう。
+                登録後、プロフィールはいつでも設定できます。
               </DialogDescription>
             </DialogHeader>
 

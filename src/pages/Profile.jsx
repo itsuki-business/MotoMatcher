@@ -30,6 +30,7 @@ export function Profile() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [profileImageUrl, setProfileImageUrl] = useState(null);
+  const [isNewUser, setIsNewUser] = useState(false);
   const [formData, setFormData] = useState({
     nickname: '',
     user_type: '',
@@ -78,6 +79,7 @@ export function Profile() {
       }
 
       if (userData) {
+        setIsNewUser(false);
         setFormData({
           nickname: userData.nickname || '',
           user_type: userData.user_type || '',
@@ -105,10 +107,12 @@ export function Profile() {
             setProfileImageUrl(result.url.href);
           }
         }
+      } else {
+        setIsNewUser(true);
       }
     } catch (err) {
       console.error('Load profile error:', err);
-      setError('プロフィールの読み込みに失敗しました');
+      setIsNewUser(true);
     } finally {
       setLoading(false);
     }
@@ -184,24 +188,39 @@ export function Profile() {
 
       const targetUserId = userId || currentUser?.userId || currentUser?.sub;
 
-      const updateInput = {
+      const input = {
         id: targetUserId,
+        email: currentUser.username || currentUser.attributes?.email,
         ...formData,
         minimum_rate: formData.minimum_rate ? parseInt(formData.minimum_rate) : null
       };
 
-      if (useMock) {
-        await mockAPIService.mockUpdateUser(updateInput);
+      if (isNewUser) {
+        if (useMock) {
+          await mockAPIService.mockCreateUser(input);
+        } else {
+          const { generateClient } = await import('aws-amplify/api');
+          const client = generateClient();
+          await client.graphql({
+            query: mutations.createUser,
+            variables: { input }
+          });
+        }
+        setIsNewUser(false);
+        setSuccess('プロフィールを作成しました');
       } else {
-        const { generateClient } = await import('aws-amplify/api');
-        const client = generateClient();
-        await client.graphql({
-          query: mutations.updateUser,
-          variables: { input: updateInput }
-        });
+        if (useMock) {
+          await mockAPIService.mockUpdateUser(input);
+        } else {
+          const { generateClient } = await import('aws-amplify/api');
+          const client = generateClient();
+          await client.graphql({
+            query: mutations.updateUser,
+            variables: { input }
+          });
+        }
+        setSuccess('プロフィールを更新しました');
       }
-
-      setSuccess('プロフィールを更新しました');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error('Update profile error:', err);
@@ -227,7 +246,12 @@ export function Profile() {
       <div className="container max-w-3xl">
         <Card>
           <CardHeader>
-            <CardTitle>プロフィール編集</CardTitle>
+            <CardTitle>{isNewUser ? 'プロフィール作成' : 'プロフィール編集'}</CardTitle>
+            {isNewUser && (
+              <p className="text-sm text-muted-foreground mt-2">
+                プロフィールを設定して、サービスを利用しましょう
+              </p>
+            )}
           </CardHeader>
 
           <CardContent>
@@ -485,17 +509,19 @@ export function Profile() {
               )}
 
               <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate(-1)}
-                  className="flex-1"
-                >
-                  キャンセル
-                </Button>
+                {!isNewUser && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate(-1)}
+                    className="flex-1"
+                  >
+                    キャンセル
+                  </Button>
+                )}
                 <Button type="submit" className="flex-1" disabled={saving}>
                   <Save className="w-4 h-4 mr-2" />
-                  {saving ? '保存中...' : '保存'}
+                  {saving ? (isNewUser ? '作成中...' : '保存中...') : (isNewUser ? '作成' : '保存')}
                 </Button>
               </div>
             </form>

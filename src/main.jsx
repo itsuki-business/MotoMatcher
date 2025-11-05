@@ -4,6 +4,13 @@ import App from './App.jsx'
 import './index.css'
 import { mockAuthService } from './services/mockAuthService'
 import { useMock } from './config/environment'
+import { Amplify } from 'aws-amplify'
+import awsconfig from './aws-exports'
+
+// AWS Amplify初期化（本番環境）
+if (!useMock) {
+  Amplify.configure(awsconfig)
+}
 
 // 開発者用：コンソールからすべてのユーザーデータを削除できる関数
 if (useMock && import.meta.env.DEV) {
@@ -26,4 +33,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>,
 )
-

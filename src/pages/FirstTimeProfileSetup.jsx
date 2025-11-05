@@ -103,7 +103,8 @@ export function FirstTimeProfileSetup() {
         const client = generateClient();
         await client.graphql({
           query: mutations.createUser,
-          variables: { input: userInput }
+          variables: { input: userInput },
+          authMode: 'userPool'
         });
       }
 
@@ -111,7 +112,13 @@ export function FirstTimeProfileSetup() {
       navigate('/home-for-register');
     } catch (err) {
       console.error('Create profile error:', err);
-      setError(err.message || 'プロフィールの作成に失敗しました');
+      console.error('Error details:', JSON.stringify(err, null, 2));
+      if (err.errors && err.errors.length > 0) {
+        console.error('GraphQL errors:', err.errors);
+        setError(err.errors[0].message || 'プロフィールの作成に失敗しました');
+      } else {
+        setError(err.message || 'プロフィールの作成に失敗しました');
+      }
     } finally {
       setLoading(false);
     }

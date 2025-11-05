@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,9 +22,11 @@ import * as mutations from '@/graphql/mutations';
 
 export function FirstTimeProfileSetup() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [step, setStep] = useState(1); // 1: basic info, 2: confirmation
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const credentials = location.state || {};
   const [formData, setFormData] = useState({
     user_type: '',
     nickname: '',
@@ -76,6 +78,17 @@ export function FirstTimeProfileSetup() {
     setError('');
 
     try {
+      // Sign in first
+      if (useMock) {
+        await mockAuthService.signIn(credentials.email, credentials.password);
+      } else {
+        const { signIn } = await import('aws-amplify/auth');
+        await signIn({
+          username: credentials.email,
+          password: credentials.password
+        });
+      }
+
       // Get current user
       let currentUser;
       if (useMock) {

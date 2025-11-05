@@ -85,18 +85,16 @@ export function RegisterModal({ isOpen, onClose }) {
           username: formData.email,
           confirmationCode: confirmCode
         });
-        
-        // Auto sign-in after confirmation
-        const { signIn } = await import('aws-amplify/auth');
-        await signIn({
-          username: formData.email,
-          password: formData.password
-        });
       }
 
-      // Navigate to first-time profile setup
-      navigate('/first-time-profile-setup');
+      // Navigate to first-time profile setup with credentials
       handleClose();
+      navigate('/first-time-profile-setup', { 
+        state: { 
+          email: formData.email, 
+          password: formData.password 
+        } 
+      });
     } catch (err) {
       console.error('Confirm error:', err);
       setError(err.message || '確認に失敗しました');

@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { SearchFilters } from '@/components/home/SearchFilters';
 import { PhotographerCard } from '@/components/home/PhotographerCard';
 import { mockAPIService } from '@/services/mockAPIService';
+import { mockAuthService } from '@/services/mockAuthService';
 import { useMock } from '@/config/environment';
 import * as queries from '@/graphql/queries';
 
 export function HomeForRegister() {
+  const navigate = useNavigate();
   const [photographers, setPhotographers] = useState([]);
   const [filteredPhotographers, setFilteredPhotographers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,8 +21,51 @@ export function HomeForRegister() {
   });
 
   useEffect(() => {
-    loadPhotographers();
+    checkUserProfile();
   }, []);
+
+  const checkUserProfile = async () => {
+    try {
+      let currentUser;
+      if (useMock) {
+        currentUser = await mockAuthService.getCurrentUser();
+      } else {
+        const { getCurrentUser } = await import('aws-amplify/auth');
+        currentUser = await getCurrentUser();
+      }
+
+      if (!currentUser) {
+        navigate('/home-for-non-register');
+        return;
+      }
+
+      // Check if user profile exists
+      if (useMock) {
+        const user = await mockAPIService.mockGetUser(currentUser.userId);
+        if (!user || !user.nickname) {
+          navigate('/first-time-profile-setup');
+          return;
+        }
+      } else {
+        const { generateClient } = await import('aws-amplify/api');
+        const client = generateClient();
+        const result = await client.graphql({
+          query: queries.getUser,
+          variables: { id: currentUser.userId || currentUser.sub },
+          authMode: 'userPool'
+        });
+        if (!result.data.getUser || !result.data.getUser.nickname) {
+          navigate('/first-time-profile-setup');
+          return;
+        }
+      }
+
+      loadPhotographers();
+    } catch (error) {
+      console.error('Check user profile error:', error);
+      loadPhotographers();
+    }
+  };
 
   useEffect(() => {
     applyFilters();

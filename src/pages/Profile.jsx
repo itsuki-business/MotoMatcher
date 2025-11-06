@@ -103,7 +103,7 @@ export function Profile() {
             setProfileImageUrl(url);
           } else {
             const { getUrl } = await import('aws-amplify/storage');
-            const result = await getUrl({ key: userData.profile_image });
+            const result = await getUrl({ path: userData.profile_image });
             setProfileImageUrl(result.url.href);
           }
         }
@@ -148,17 +148,18 @@ export function Profile() {
         setProfileImageUrl(url);
       } else {
         const { uploadData } = await import('aws-amplify/storage');
+        const imagePath = `profile-images/${Date.now()}_${file.name}`;
         const result = await uploadData({
-          key: `profile-images/${Date.now()}_${file.name}`,
+          path: imagePath,
           data: file,
           options: {
             contentType: file.type
           }
         });
-        imageKey = result.key;
+        imageKey = result.path;
         
         const { getUrl } = await import('aws-amplify/storage');
-        const urlResult = await getUrl({ key: imageKey });
+        const urlResult = await getUrl({ path: imageKey });
         setProfileImageUrl(urlResult.url.href);
       }
 

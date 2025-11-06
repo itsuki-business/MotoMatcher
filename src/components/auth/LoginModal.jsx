@@ -49,7 +49,7 @@ export function LoginModal({ isOpen, onClose, onSuccess, onForgotPassword }) {
         <DialogHeader>
           <DialogTitle>ログイン</DialogTitle>
           <DialogDescription>
-            BikeMatchにログインして、フォトグラファーとつながりましょう
+            MotoMatcherにログインして、フォトグラファーとつながりましょう
           </DialogDescription>
         </DialogHeader>
 

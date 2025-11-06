@@ -32,7 +32,7 @@ export function Profile() {
   const [profileImageUrl, setProfileImageUrl] = useState(null);
   const [isNewUser, setIsNewUser] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
+    nickname: '',
     user_type: '',
     prefecture: '',
     bike_maker: '',
@@ -81,7 +81,7 @@ export function Profile() {
       if (userData) {
         setIsNewUser(false);
         setFormData({
-          name: userData.name || '',
+          nickname: userData.nickname || '',
           user_type: userData.user_type || '',
           prefecture: userData.prefecture || '',
           bike_maker: userData.bike_maker || '',
@@ -261,7 +261,7 @@ export function Profile() {
                 <Avatar className="w-24 h-24">
                   <AvatarImage src={profileImageUrl} />
                   <AvatarFallback className="bg-blue-100 text-blue-600 text-2xl">
-                    {formData.name?.[0] || '?'}
+                    {formData.nickname?.[0] || '?'}
                   </AvatarFallback>
                 </Avatar>
                 <div>
@@ -300,11 +300,11 @@ export function Profile() {
 
               {/* Basic Info */}
               <div className="space-y-2">
-                <Label htmlFor="name">お名前 *</Label>
+                <Label htmlFor="nickname">お名前 *</Label>
                 <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  id="nickname"
+                  value={formData.nickname}
+                  onChange={(e) => handleInputChange('nickname', e.target.value)}
                   required
                 />
               </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { HeroSection } from '@/components/home/HeroSection';
 import { PhotographerCard } from '@/components/home/PhotographerCard';
@@ -6,10 +7,12 @@ import { LoginModal } from '@/components/auth/LoginModal';
 import { RegisterModal } from '@/components/auth/RegisterModal';
 import { ResetPasswordModal } from '@/components/auth/ResetPasswordModal';
 import { mockAPIService } from '@/services/mockAPIService';
+import { mockAuthService } from '@/services/mockAuthService';
 import { useMock } from '@/config/environment';
 import * as queries from '@/graphql/queries';
 
 export function HomeForNonRegister() {
+  const navigate = useNavigate();
   const [photographers, setPhotographers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -17,8 +20,28 @@ export function HomeForNonRegister() {
   const [resetPasswordModalOpen, setResetPasswordModalOpen] = useState(false);
 
   useEffect(() => {
-    loadPhotographers();
+    checkAuthAndRedirect();
   }, []);
+
+  const checkAuthAndRedirect = async () => {
+    try {
+      let currentUser;
+      if (useMock) {
+        currentUser = await mockAuthService.getCurrentUser();
+      } else {
+        const { getCurrentUser } = await import('aws-amplify/auth');
+        currentUser = await getCurrentUser();
+      }
+
+      if (currentUser) {
+        navigate('/home-for-register');
+        return;
+      }
+    } catch (error) {
+      // Not logged in
+    }
+    loadPhotographers();
+  };
 
   const loadPhotographers = async () => {
     try {

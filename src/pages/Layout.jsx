@@ -130,7 +130,7 @@ export function Layout() {
             <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-sm">BM</span>
             </div>
-            <span className="font-bold text-xl hidden sm:inline">BikeMatch</span>
+            <span className="font-bold text-xl hidden sm:inline">MotoMatcher</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -199,10 +199,10 @@ export function Layout() {
                     <Avatar className="w-8 h-8">
                       <AvatarImage src={profileImageUrl} />
                       <AvatarFallback className="bg-blue-100 text-blue-600">
-                        {appUser?.name?.[0] || '?'}
+                        {appUser?.nickname?.[0] || '?'}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{appUser?.name || 'ユーザー'}</span>
+                    <span className="font-medium">{appUser?.nickname || 'ユーザー'}</span>
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -338,7 +338,7 @@ export function Layout() {
         <div className="container">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-center md:text-left">
-              <p className="font-semibold mb-1">BikeMatch</p>
+              <p className="font-semibold mb-1">MotoMatcher</p>
               <p className="text-sm text-gray-400">
                 バイク × フォトグラファーマッチングプラットフォーム
               </p>

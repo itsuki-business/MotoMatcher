@@ -117,7 +117,7 @@ export function RegisterModal({ isOpen, onClose }) {
               input: {
                 id: currentUser.userId,
                 email: formData.email,
-                name: formData.name,
+                nickname: formData.name,
                 user_type: formData.user_type
               }
             }
@@ -160,7 +160,7 @@ export function RegisterModal({ isOpen, onClose }) {
             <DialogHeader>
               <DialogTitle>新規登録</DialogTitle>
               <DialogDescription>
-                BikeMatchに登録して、フォトグラファーを見つけましょう。
+                MotoMatcherに登録して、フォトグラファーを見つけましょう。
                 登録後、プロフィールはいつでも設定できます。
               </DialogDescription>
             </DialogHeader>

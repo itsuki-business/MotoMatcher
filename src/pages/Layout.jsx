@@ -128,7 +128,7 @@ export function Layout() {
           {/* Logo */}
           <Link to={user ? '/home-for-register' : '/home-for-non-register'} className="flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">BM</span>
+              <span className="text-white font-bold text-sm">MM</span>
             </div>
             <span className="font-bold text-xl hidden sm:inline">MotoMatcher</span>
           </Link>
@@ -359,7 +359,7 @@ export function Layout() {
             </div>
           </div>
           <div className="text-center text-sm text-gray-400 mt-6">
-            © 2025 BikeMatch. All rights reserved.
+            © 2025 MotoMatcher. All rights reserved.
           </div>
         </div>
       </footer>

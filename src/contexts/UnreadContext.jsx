@@ -53,10 +53,10 @@ export function UnreadProvider({ children }) {
         const { generateClient } = await import('aws-amplify/api');
         const client = generateClient();
         const result = await client.graphql({
-          query: queries.listConversations,
+          query: queries.conversationsByBiker,
           variables: { biker_id: userId }
         });
-        conversations = result.data.listConversations.items || [];
+        conversations = result.data.conversationsByBiker.items || [];
       }
 
       // Count unread messages
@@ -70,10 +70,10 @@ export function UnreadProvider({ children }) {
           const { generateClient } = await import('aws-amplify/api');
           const client = generateClient();
           const result = await client.graphql({
-            query: queries.listMessages,
+            query: queries.messagesByConversation,
             variables: { conversationID: conversation.id }
           });
-          messages = result.data.listMessages.items || [];
+          messages = result.data.messagesByConversation.items || [];
         }
         
         // Count messages not sent by current user and not read

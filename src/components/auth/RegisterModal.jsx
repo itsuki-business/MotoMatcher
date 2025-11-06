@@ -111,7 +111,7 @@ export function RegisterModal({ isOpen, onClose }) {
         
         try {
           const { createUser } = await import('@/graphql/mutations');
-          await client.graphql({
+          const createResult = await client.graphql({
             query: createUser,
             variables: {
               input: {
@@ -122,8 +122,11 @@ export function RegisterModal({ isOpen, onClose }) {
               }
             }
           });
+          console.log('Profile created:', createResult);
         } catch (createError) {
           console.error('Create profile error:', createError);
+          console.error('Error details:', JSON.stringify(createError, null, 2));
+          alert('プロフィール作成に失敗しました: ' + (createError.message || '不明なエラー'));
         }
       }
 

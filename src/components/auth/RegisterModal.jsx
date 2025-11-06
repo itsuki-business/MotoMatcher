@@ -106,6 +106,11 @@ export function RegisterModal({ isOpen, onClose }) {
         // プロフィール自動作成
         const { getCurrentUser } = await import('aws-amplify/auth');
         const currentUser = await getCurrentUser();
+        console.log('Current user:', currentUser);
+        
+        const userId = currentUser.userId || currentUser.sub;
+        console.log('User ID for profile:', userId);
+        
         const { generateClient } = await import('aws-amplify/api');
         const client = generateClient();
         
@@ -115,7 +120,7 @@ export function RegisterModal({ isOpen, onClose }) {
             query: createUser,
             variables: {
               input: {
-                id: currentUser.userId,
+                id: userId,
                 email: formData.email,
                 nickname: formData.name,
                 user_type: formData.user_type
@@ -126,7 +131,12 @@ export function RegisterModal({ isOpen, onClose }) {
         } catch (createError) {
           console.error('Create profile error:', createError);
           console.error('Error details:', JSON.stringify(createError, null, 2));
-          alert('プロフィール作成に失敗しました: ' + (createError.message || '不明なエラー'));
+          if (createError.errors && createError.errors.length > 0) {
+            console.error('GraphQL errors:', createError.errors);
+            alert('プロフィール作成に失敗しました: ' + createError.errors[0].message);
+          } else {
+            alert('プロフィール作成に失敗しました: ' + (createError.message || '不明なエラー'));
+          }
         }
       }
 

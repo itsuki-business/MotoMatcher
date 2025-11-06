@@ -131,7 +131,7 @@ export function PortfolioManagement() {
               imageUrl = await mockStorageService.getImageUrl(portfolio.image_key);
             } else {
               const { getUrl } = await import('aws-amplify/storage');
-              const result = await getUrl({ key: portfolio.image_key });
+              const result = await getUrl({ path: portfolio.image_key });
               imageUrl = result.url.href;
             }
           }

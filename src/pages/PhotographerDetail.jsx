@@ -56,7 +56,7 @@ export function PhotographerDetail() {
           setProfileImageUrl(url);
         } else {
           const { getUrl } = await import('aws-amplify/storage');
-          const result = await getUrl({ key: photographer.profile_image });
+          const result = await getUrl({ path: photographer.profile_image });
           setProfileImageUrl(result.url.href);
         }
       }

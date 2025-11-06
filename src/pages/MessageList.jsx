@@ -121,7 +121,7 @@ export function MessageList() {
               profileImageUrl = await mockStorageService.getImageUrl(userData.profile_image);
             } else {
               const { getUrl } = await import('aws-amplify/storage');
-              const result = await getUrl({ key: userData.profile_image });
+              const result = await getUrl({ path: userData.profile_image });
               profileImageUrl = result.url.href;
             }
           }

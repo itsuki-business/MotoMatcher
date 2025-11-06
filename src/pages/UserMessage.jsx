@@ -232,7 +232,7 @@ export function UserMessage() {
           setOtherUserImage(url);
         } else {
           const { getUrl } = await import('aws-amplify/storage');
-          const result = await getUrl({ key: userData.profile_image });
+          const result = await getUrl({ path: userData.profile_image });
           setOtherUserImage(result.url.href);
         }
       }

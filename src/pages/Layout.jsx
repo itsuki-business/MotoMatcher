@@ -69,7 +69,7 @@ export function Layout() {
               setProfileImageUrl(url);
             } else {
               const { getUrl } = await import('aws-amplify/storage');
-              const result = await getUrl({ key: userData.profile_image });
+              const result = await getUrl({ path: userData.profile_image });
               setProfileImageUrl(result.url.href);
             }
           }

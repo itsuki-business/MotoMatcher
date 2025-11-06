@@ -21,7 +21,7 @@ export function PhotographerCard({ photographer, index = 0 }) {
         } else {
           // AWS S3 implementation
           const { getUrl } = await import('aws-amplify/storage');
-          const result = await getUrl({ key: photographer.profile_image });
+          const result = await getUrl({ path: photographer.profile_image });
           setProfileImageUrl(result.url.href);
         }
       }

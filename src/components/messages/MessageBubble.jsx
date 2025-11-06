@@ -15,7 +15,7 @@ export function MessageBubble({ message, isOwn, senderName }) {
           setMediaUrl(url);
         } else {
           const { getUrl } = await import('aws-amplify/storage');
-          const result = await getUrl({ key: message.media_key });
+          const result = await getUrl({ path: message.media_key });
           setMediaUrl(result.url.href);
         }
       }

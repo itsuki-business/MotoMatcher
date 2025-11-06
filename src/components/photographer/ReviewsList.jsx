@@ -20,7 +20,7 @@ export function ReviewsList({ reviews }) {
               profileImageUrl = await mockStorageService.getImageUrl(review.reviewer.profile_image);
             } else {
               const { getUrl } = await import('aws-amplify/storage');
-              const result = await getUrl({ key: review.reviewer.profile_image });
+              const result = await getUrl({ path: review.reviewer.profile_image });
               profileImageUrl = result.url.href;
             }
           }

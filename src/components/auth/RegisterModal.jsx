@@ -125,7 +125,8 @@ export function RegisterModal({ isOpen, onClose }) {
                 nickname: formData.name,
                 user_type: formData.user_type
               }
-            }
+            },
+            authMode: 'userPool'
           });
           console.log('Profile created:', createResult);
         } catch (createError) {

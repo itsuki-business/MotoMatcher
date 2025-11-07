@@ -178,14 +178,15 @@ export function PortfolioManagement() {
         imageKey = await mockStorageService.uploadImage(newPortfolio.file, 'portfolio');
       } else {
         const { uploadData } = await import('aws-amplify/storage');
-        const result = await uploadData({
-          key: `portfolio/${userId}/${Date.now()}_${newPortfolio.file.name}`,
+        const imagePath = `portfolio/${userId}/${Date.now()}_${newPortfolio.file.name}`;
+        await uploadData({
+          path: imagePath,
           data: newPortfolio.file,
           options: {
             contentType: newPortfolio.file.type
           }
-        });
-        imageKey = result.key;
+        }).result;
+        imageKey = imagePath;
       }
 
       // Create portfolio
@@ -237,7 +238,7 @@ export function PortfolioManagement() {
         await mockStorageService.remove({ key: portfolio.image_key });
       } else {
         const { remove } = await import('aws-amplify/storage');
-        await remove({ key: portfolio.image_key });
+        await remove({ path: portfolio.image_key });
       }
 
       // Delete portfolio record

@@ -289,14 +289,15 @@ export function UserMessage() {
         imageKey = await mockStorageService.uploadImage(file, 'message-media');
       } else {
         const { uploadData } = await import('aws-amplify/storage');
-        const result = await uploadData({
-          key: `message-media/${Date.now()}_${file.name}`,
+        const imagePath = `message-media/${Date.now()}_${file.name}`;
+        await uploadData({
+          path: imagePath,
           data: file,
           options: {
             contentType: file.type
           }
-        });
-        imageKey = result.key;
+        }).result;
+        imageKey = imagePath;
       }
 
       const messageInput = {

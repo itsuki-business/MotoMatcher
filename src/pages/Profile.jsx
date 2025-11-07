@@ -149,14 +149,14 @@ export function Profile() {
       } else {
         const { uploadData } = await import('aws-amplify/storage');
         const imagePath = `profile-images/${Date.now()}_${file.name}`;
-        const result = await uploadData({
+        await uploadData({
           path: imagePath,
           data: file,
           options: {
             contentType: file.type
           }
-        });
-        imageKey = result.path;
+        }).result;
+        imageKey = imagePath;
         
         const { getUrl } = await import('aws-amplify/storage');
         const urlResult = await getUrl({ path: imageKey });

@@ -147,8 +147,12 @@ export function Profile() {
         const url = await mockStorageService.getImageUrl(imageKey);
         setProfileImageUrl(url);
       } else {
+        const { getCurrentUser } = await import('aws-amplify/auth');
+        const currentUser = await getCurrentUser();
+        const currentUserId = currentUser.userId || currentUser.sub;
+        
         const { uploadData } = await import('aws-amplify/storage');
-        const imagePath = `profile-images/${Date.now()}_${file.name}`;
+        const imagePath = `protected/${currentUserId}/profile-images/${Date.now()}_${file.name}`;
         await uploadData({
           path: imagePath,
           data: file,

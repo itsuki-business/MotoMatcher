@@ -178,7 +178,7 @@ export function PortfolioManagement() {
         imageKey = await mockStorageService.uploadImage(newPortfolio.file, 'portfolio');
       } else {
         const { uploadData } = await import('aws-amplify/storage');
-        const imagePath = `portfolio/${userId}/${Date.now()}_${newPortfolio.file.name}`;
+        const imagePath = `protected/${userId}/portfolio/${Date.now()}_${newPortfolio.file.name}`;
         await uploadData({
           path: imagePath,
           data: newPortfolio.file,

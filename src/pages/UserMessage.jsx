@@ -288,8 +288,12 @@ export function UserMessage() {
       if (useMock) {
         imageKey = await mockStorageService.uploadImage(file, 'message-media');
       } else {
+        const { getCurrentUser } = await import('aws-amplify/auth');
+        const currentUser = await getCurrentUser();
+        const currentUserId = currentUser.userId || currentUser.sub;
+        
         const { uploadData } = await import('aws-amplify/storage');
-        const imagePath = `message-media/${Date.now()}_${file.name}`;
+        const imagePath = `protected/${currentUserId}/message-media/${Date.now()}_${file.name}`;
         await uploadData({
           path: imagePath,
           data: file,

@@ -293,12 +293,13 @@ export function UserMessage() {
         const currentUserId = currentUser.userId || currentUser.sub;
         
         const { uploadData } = await import('aws-amplify/storage');
-        const imagePath = `protected/${currentUserId}/message-media/${Date.now()}_${file.name}`;
+        const imagePath = `message-media/${Date.now()}_${file.name}`;
         await uploadData({
           path: imagePath,
           data: file,
           options: {
-            contentType: file.type
+            contentType: file.type,
+            accessLevel: 'protected'
           }
         }).result;
         imageKey = imagePath;

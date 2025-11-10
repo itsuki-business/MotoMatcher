@@ -158,8 +158,58 @@ export function UserMessage() {
       if (useMock) {
         conv = await mockAPIService.mockGetOrCreateConversation(myUserId, otherUserId);
       } else {
-        // AWS implementation
-        console.log('Get conversation from AWS');
+        const { generateClient } = await import('aws-amplify/api');
+        const client = generateClient();
+        
+        // Try to find existing conversation
+        const bikerConvs = await client.graphql({
+          query: queries.conversationsByBiker,
+          variables: { biker_id: myUserId }
+        });
+        
+        const photographerConvs = await client.graphql({
+          query: queries.conversationsByPhotographer,
+          variables: { photographer_id: myUserId }
+        });
+        
+        const allConvs = [
+          ...(bikerConvs.data.conversationsByBiker?.items || []),
+          ...(photographerConvs.data.conversationsByPhotographer?.items || [])
+        ];
+        
+        conv = allConvs.find(c => 
+          (c.biker_id === myUserId && c.photographer_id === otherUserId) ||
+          (c.biker_id === otherUserId && c.photographer_id === myUserId)
+        );
+        
+        // Create new conversation if not found
+        if (!conv) {
+          const otherUserData = await client.graphql({
+            query: queries.getUser,
+            variables: { id: otherUserId }
+          });
+          
+          const myUserData = await client.graphql({
+            query: queries.getUser,
+            variables: { id: myUserId }
+          });
+          
+          const result = await client.graphql({
+            query: mutations.createConversation,
+            variables: {
+              input: {
+                biker_id: myUserId,
+                photographer_id: otherUserId,
+                biker_name: myUserData.data.getUser?.nickname || myUserData.data.getUser?.email,
+                photographer_name: otherUserData.data.getUser?.nickname || otherUserData.data.getUser?.email,
+                last_message: '',
+                last_message_at: new Date().toISOString(),
+                status: 'active'
+              }
+            }
+          });
+          conv = result.data.createConversation;
+        }
       }
       setConversation(conv);
 

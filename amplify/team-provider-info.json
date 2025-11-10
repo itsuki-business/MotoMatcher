@@ -23,6 +23,9 @@
       },
       "storage": {
         "bikematchstorage": {}
+      },
+      "api": {
+        "motomatcher": {}
       }
     }
   },

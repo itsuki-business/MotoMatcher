@@ -131,7 +131,8 @@ export function PortfolioManagement() {
               imageUrl = await mockStorageService.getImageUrl(portfolio.image_key);
             } else {
               const { getUrl } = await import('aws-amplify/storage');
-              const result = await getUrl({ path: portfolio.image_key });
+              const path = portfolio.image_key.startsWith('public/') ? portfolio.image_key : `public/${portfolio.image_key}`;
+              const result = await getUrl({ path });
               imageUrl = result.url.href;
             }
           }
@@ -178,7 +179,7 @@ export function PortfolioManagement() {
         imageKey = await mockStorageService.uploadImage(newPortfolio.file, 'portfolio');
       } else {
         const { uploadData } = await import('aws-amplify/storage');
-        const imagePath = `portfolio/${userId}/${Date.now()}_${newPortfolio.file.name}`;
+        const imagePath = `public/portfolio/${userId}/${Date.now()}_${newPortfolio.file.name}`;
         await uploadData({
           path: imagePath,
           data: newPortfolio.file,

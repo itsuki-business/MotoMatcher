@@ -141,6 +141,15 @@ export function Profile() {
       setSaving(true);
       setError('');
 
+      let currentUser;
+      if (useMock) {
+        currentUser = await mockAuthService.getCurrentUser();
+      } else {
+        const { getCurrentUser } = await import('aws-amplify/auth');
+        currentUser = await getCurrentUser();
+      }
+      const targetUserId = userId || currentUser?.userId || currentUser?.sub;
+
       let imageKey;
       if (useMock) {
         imageKey = await mockStorageService.uploadImage(file, 'profile-images');
@@ -148,7 +157,7 @@ export function Profile() {
         setProfileImageUrl(url);
       } else {
         const { uploadData } = await import('aws-amplify/storage');
-        const imagePath = `profile-images/${Date.now()}_${file.name}`;
+        const imagePath = `profile-images/${targetUserId}/${Date.now()}_${file.name}`;
         
         await uploadData({
           path: imagePath,

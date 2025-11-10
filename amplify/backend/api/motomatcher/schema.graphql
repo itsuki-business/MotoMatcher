@@ -26,12 +26,12 @@ type User @model @auth(rules: [
   rate_details: String
   owner: String @auth(rules: [{ allow: owner, operations: [read, delete] }])
   
-  portfolioItems: [Portfolio] @hasMany(indexName: "byPhotographer", fields: ["id"])
-  conversationsAsBiker: [Conversation] @hasMany(indexName: "byBiker", fields: ["id"])
-  conversationsAsPhotographer: [Conversation] @hasMany(indexName: "byPhotographer", fields: ["id"])
-  reviewsGiven: [Review] @hasMany(indexName: "byReviewer", fields: ["id"])
-  reviewsReceived: [Review] @hasMany(indexName: "byReviewee", fields: ["id"])
-  sentMessages: [Message] @hasMany(indexName: "bySender", fields: ["id"])
+  portfolioItems: [Portfolio] @connection(keyName: "byPhotographer", fields: ["id"])
+  conversationsAsBiker: [Conversation] @connection(keyName: "byBiker", fields: ["id"])
+  conversationsAsPhotographer: [Conversation] @connection(keyName: "byPhotographer", fields: ["id"])
+  reviewsGiven: [Review] @connection(keyName: "byReviewer", fields: ["id"])
+  reviewsReceived: [Review] @connection(keyName: "byReviewee", fields: ["id"])
+  sentMessages: [Message] @connection(keyName: "bySender", fields: ["id"])
   
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
@@ -40,14 +40,14 @@ type User @model @auth(rules: [
 type Portfolio @model @auth(rules: [
   { allow: owner, ownerField: "owner" },
   { allow: private, operations: [read] }
-]) {
+]) @key(name: "byPhotographer", fields: ["photographer_id", "createdAt"], queryField: "portfoliosByPhotographer") {
   id: ID!
-  photographer_id: ID! @index(name: "byPhotographer", sortKeyFields: ["createdAt"])
+  photographer_id: ID!
   image_key: String!
   title: String
   description: String
   owner: String
-  photographer: User @belongsTo(fields: ["photographer_id"])
+  photographer: User @connection(fields: ["photographer_id"])
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
 }
@@ -55,19 +55,19 @@ type Portfolio @model @auth(rules: [
 type Conversation @model @auth(rules: [
   { allow: owner, ownerField: "biker_id" },
   { allow: owner, ownerField: "photographer_id" }
-]) {
+]) @key(name: "byBiker", fields: ["biker_id", "last_message_at"], queryField: "conversationsByBiker") @key(name: "byPhotographer", fields: ["photographer_id", "last_message_at"], queryField: "conversationsByPhotographer") {
   id: ID!
-  biker_id: ID! @index(name: "byBiker", sortKeyFields: ["last_message_at"])
-  photographer_id: ID! @index(name: "byPhotographer", sortKeyFields: ["last_message_at"])
+  biker_id: ID!
+  photographer_id: ID!
   biker_name: String
   photographer_name: String
   last_message: String
   last_message_at: AWSDateTime
   status: String
   
-  biker: User @belongsTo(fields: ["biker_id"])
-  photographer: User @belongsTo(fields: ["photographer_id"])
-  messages: [Message] @hasMany(indexName: "byConversation", fields: ["id"])
+  biker: User @connection(fields: ["biker_id"])
+  photographer: User @connection(fields: ["photographer_id"])
+  messages: [Message] @connection(keyName: "byConversation", fields: ["id"])
   
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
@@ -76,17 +76,17 @@ type Conversation @model @auth(rules: [
 type Message @model @auth(rules: [
   { allow: owner, ownerField: "sender_id" },
   { allow: private, operations: [read] }
-]) {
+]) @key(name: "byConversation", fields: ["conversationID", "createdAt"], queryField: "messagesByConversation") @key(name: "bySender", fields: ["sender_id", "createdAt"]) {
   id: ID!
-  conversationID: ID! @index(name: "byConversation", sortKeyFields: ["createdAt"])
-  sender_id: ID! @index(name: "bySender", sortKeyFields: ["createdAt"])
+  conversationID: ID!
+  sender_id: ID!
   content: String
   media_key: String
   media_type: String
   is_read: Boolean
   
-  conversation: Conversation @belongsTo(fields: ["conversationID"])
-  sender: User @belongsTo(fields: ["sender_id"])
+  conversation: Conversation @connection(fields: ["conversationID"])
+  sender: User @connection(fields: ["sender_id"])
   
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
@@ -95,16 +95,16 @@ type Message @model @auth(rules: [
 type Review @model @auth(rules: [
   { allow: owner, ownerField: "reviewer_id" },
   { allow: private, operations: [read] }
-]) {
+]) @key(name: "byReviewer", fields: ["reviewer_id", "createdAt"]) @key(name: "byReviewee", fields: ["reviewee_id", "createdAt"], queryField: "reviewsByReviewee") {
   id: ID!
-  reviewer_id: ID! @index(name: "byReviewer", sortKeyFields: ["createdAt"])
-  reviewee_id: ID! @index(name: "byReviewee", sortKeyFields: ["createdAt"])
+  reviewer_id: ID!
+  reviewee_id: ID!
   conversation_id: ID
   rating: Int!
   comment: String
   
-  reviewer: User @belongsTo(fields: ["reviewer_id"])
-  reviewee: User @belongsTo(fields: ["reviewee_id"])
+  reviewer: User @connection(fields: ["reviewer_id"])
+  reviewee: User @connection(fields: ["reviewee_id"])
   
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!

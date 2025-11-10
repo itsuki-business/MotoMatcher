@@ -13,6 +13,11 @@ export const getUser = /* GraphQL */ `
       bio
       profile_image
       genres
+      instagram_url
+      twitter_url
+      website_url
+      minimum_rate
+      rate_details
       createdAt
       updatedAt
     }
@@ -33,6 +38,11 @@ export const listUsers = /* GraphQL */ `
         bio
         profile_image
         genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
         createdAt
         updatedAt
       }
@@ -53,6 +63,11 @@ export const listPhotographers = /* GraphQL */ `
         bio
         profile_image
         genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
         createdAt
         updatedAt
       }

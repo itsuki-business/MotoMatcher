@@ -13,6 +13,11 @@ export const createUser = /* GraphQL */ `
       bio
       profile_image
       genres
+      instagram_url
+      twitter_url
+      website_url
+      minimum_rate
+      rate_details
       createdAt
       updatedAt
     }
@@ -32,6 +37,11 @@ export const updateUser = /* GraphQL */ `
       bio
       profile_image
       genres
+      instagram_url
+      twitter_url
+      website_url
+      minimum_rate
+      rate_details
       createdAt
       updatedAt
     }

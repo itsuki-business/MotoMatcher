@@ -19,7 +19,7 @@ export function Terms() {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold mb-4">第1条（適用）</h2>
                 <p className="text-muted-foreground leading-relaxed">
-                  本規約は、BikeMatch（以下「当サービス」といいます）の利用に関する条件を、
+                  本規約は、MotoMatcher（以下「当サービス」といいます）の利用に関する条件を、
                   当サービスを利用するすべてのユーザー（以下「ユーザー」といいます）と
                   当サービス運営者との間で定めるものです。
                 </p>

@@ -116,10 +116,10 @@ export function PortfolioManagement() {
         const { generateClient } = await import('aws-amplify/api');
         const client = generateClient();
         const result = await client.graphql({
-          query: queries.listPortfolios,
+          query: queries.portfoliosByPhotographer,
           variables: { photographer_id: userId }
         });
-        portfolioList = result.data.listPortfolios.items;
+        portfolioList = result.data.portfoliosByPhotographer.items;
       }
 
       // Load image URLs

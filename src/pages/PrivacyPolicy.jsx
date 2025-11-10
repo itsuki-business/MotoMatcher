@@ -22,7 +22,7 @@ export function PrivacyPolicy() {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold mb-4">1. はじめに</h2>
                 <p className="text-muted-foreground leading-relaxed">
-                  BikeMatch（以下「当サービス」といいます）は、ユーザーの皆様の個人情報を適切に保護することを重要な責務と考えています。
+                  MotoMatcher（以下「当サービス」といいます）は、ユーザーの皆様の個人情報を適切に保護することを重要な責務と考えています。
                   本プライバシーポリシーは、当サービスがどのように個人情報を収集、使用、保護するかについて説明するものです。
                 </p>
               </section>
@@ -161,7 +161,7 @@ export function PrivacyPolicy() {
                   本プライバシーポリシーに関するお問い合わせは、以下までご連絡ください：
                 </p>
                 <div className="bg-blue-50 p-4 rounded-lg mt-4">
-                  <p className="font-semibold mb-2">BikeMatch 運営事務局</p>
+                  <p className="font-semibold mb-2">MotoMatcher 運営事務局</p>
                   <p className="text-muted-foreground">
                     メールアドレス: <a href="mailto:itsuki.buss@gmail.com" className="text-blue-600 hover:underline">itsuki.buss@gmail.com</a>
                   </p>

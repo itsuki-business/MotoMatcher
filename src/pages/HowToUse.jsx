@@ -15,7 +15,7 @@ export function HowToUse() {
             <CardHeader className="text-center">
               <CardTitle className="text-3xl">使い方ガイド</CardTitle>
               <CardDescription className="text-lg mt-2">
-                BikeMatchの基本的な使い方をご紹介します
+                MotoMatcherの基本的な使い方をご紹介します
               </CardDescription>
             </CardHeader>
 
@@ -162,7 +162,7 @@ export function HowToUse() {
 
               {/* Tips */}
               <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-xl">
-                <h3 className="text-xl font-bold mb-4">💡 BikeMatchをもっと活用するコツ</h3>
+                <h3 className="text-xl font-bold mb-4">💡 MotoMatcherをもっと活用するコツ</h3>
                 <ul className="space-y-2 text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">•</span>

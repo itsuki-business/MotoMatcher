@@ -15,7 +15,7 @@ export function Contact() {
             <CardHeader className="text-center">
               <CardTitle className="text-3xl">お問い合わせ</CardTitle>
               <CardDescription className="text-lg mt-2">
-                BikeMatchに関するご質問やご要望がございましたら、お気軽にお問い合わせください
+                MotoMatcherに関するご質問やご要望がございましたら、お気軽にお問い合わせください
               </CardDescription>
             </CardHeader>
 
@@ -131,7 +131,7 @@ export function Contact() {
                       <MessageCircle className="w-5 h-5 text-muted-foreground group-open:rotate-180 transition-transform" />
                     </summary>
                     <div className="p-4 text-muted-foreground text-sm">
-                      BikeMatchの改善に向けたご提案を歓迎いたします！
+                      MotoMatcherの改善に向けたご提案を歓迎いたします！
                       機能の詳細や目的を含めてメールでお送りください。
                     </div>
                   </details>

@@ -69,10 +69,10 @@ export function PhotographerDetail() {
         const { generateClient } = await import('aws-amplify/api');
         const client = generateClient();
         const portfolioResult = await client.graphql({
-          query: queries.listPortfolios,
+          query: queries.portfoliosByPhotographer,
           variables: { photographer_id: photographer.id }
         });
-        setPortfolios(portfolioResult.data.listPortfolios.items);
+        setPortfolios(portfolioResult.data.portfoliosByPhotographer.items);
       }
 
       // Load reviews
@@ -83,10 +83,10 @@ export function PhotographerDetail() {
         const { generateClient } = await import('aws-amplify/api');
         const client = generateClient();
         const reviewResult = await client.graphql({
-          query: queries.listReviews,
+          query: queries.reviewsByReviewee,
           variables: { reviewee_id: photographer.id }
         });
-        setReviews(reviewResult.data.listReviews.items);
+        setReviews(reviewResult.data.reviewsByReviewee.items);
       }
     } catch (error) {
       console.error('Load photographer detail error:', error);

@@ -194,14 +194,38 @@ export function UserMessage() {
             variables: { id: myUserId }
           });
           
+          // Determine roles based on user_type
+          const myUser = myUserData.data.getUser;
+          const otherUser = otherUserData.data.getUser;
+          
+          let bikerId, photographerId, bikerName, photographerName;
+          
+          if (myUser.user_type === 'photographer') {
+            photographerId = myUserId;
+            photographerName = myUser.nickname || myUser.email;
+            bikerId = otherUserId;
+            bikerName = otherUser.nickname || otherUser.email;
+          } else if (otherUser.user_type === 'photographer') {
+            bikerId = myUserId;
+            bikerName = myUser.nickname || myUser.email;
+            photographerId = otherUserId;
+            photographerName = otherUser.nickname || otherUser.email;
+          } else {
+            // Both are clients, use myUserId as biker
+            bikerId = myUserId;
+            bikerName = myUser.nickname || myUser.email;
+            photographerId = otherUserId;
+            photographerName = otherUser.nickname || otherUser.email;
+          }
+          
           const result = await client.graphql({
             query: mutations.createConversation,
             variables: {
               input: {
-                biker_id: myUserId,
-                photographer_id: otherUserId,
-                biker_name: myUserData.data.getUser?.nickname || myUserData.data.getUser?.email,
-                photographer_name: otherUserData.data.getUser?.nickname || otherUserData.data.getUser?.email,
+                biker_id: bikerId,
+                photographer_id: photographerId,
+                biker_name: bikerName,
+                photographer_name: photographerName,
                 last_message: '',
                 last_message_at: new Date().toISOString(),
                 status: 'active'

@@ -64,7 +64,7 @@ type Conversation @model @auth(rules: [
   last_message: String
   last_message_at: AWSDateTime
   status: String
-  completed_by: [String] # <-- この行を追加
+  completed_by: [String] # <-- この行を追加してください
   
   biker: User @belongsTo(fields: ["biker_id"])
   photographer: User @belongsTo(fields: ["photographer_id"])

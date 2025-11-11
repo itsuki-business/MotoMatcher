@@ -263,6 +263,11 @@ export function MessageList() {
 
 
   const handleConversationClick = async (conversation) => {
+    // 即座にNEW表示を消す
+    setConversations(prev => prev.map(conv => 
+      conv.id === conversation.id ? { ...conv, hasUnread: false } : conv
+    ));
+    
     const otherUserId = conversation.biker_id === myUserId 
       ? conversation.photographer_id 
       : conversation.biker_id;

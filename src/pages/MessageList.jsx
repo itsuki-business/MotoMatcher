@@ -69,7 +69,7 @@ export function MessageList() {
         ...(photographerConvs.data.conversationsByPhotographer?.items || [])
       ];
 
-      const conversationsWithImages = [];
+      const conversationsWithData = [];
       
       for (const conversation of conversationsList) {
         const otherUserId = conversation.biker_id === myUserId 
@@ -95,7 +95,7 @@ export function MessageList() {
           console.error('Error loading user data:', error);
         }
 
-        let hasUnread = false;
+        let unreadCount = 0;
         try {
           const result = await client.graphql({
             query: queries.messagesByConversation,
@@ -103,55 +103,27 @@ export function MessageList() {
           });
           const messages = result.data.messagesByConversation.items || [];
           
-          hasUnread = messages.some(m => 
+          unreadCount = messages.filter(m => 
             m.sender_id !== myUserId && !m.is_read
-          );
+          ).length;
         } catch (error) {
           console.error('Error checking unread messages:', error);
         }
 
-        conversationsWithImages.push({
+        conversationsWithData.push({
           ...conversation,
           otherUser: userData,
           profileImageUrl,
-          hasUnread
+          unreadCount
         });
       }
 
-      setConversations(prev => {
-        return conversationsWithImages.map(newConv => {
-          const existingConv = prev.find(c => c.id === newConv.id);
-          if (existingConv && existingConv.profileImageUrl && !newConv.profileImageUrl) {
-            return { ...newConv, profileImageUrl: existingConv.profileImageUrl };
-          }
-          return newConv;
-        });
-      });
+      setConversations(conversationsWithData);
     } catch (error) {
       console.error('Load conversations error:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const filterConversations = () => {
-    if (!searchQuery) {
-      setFilteredConversations(conversations);
-      return;
-    }
-
-    const query = searchQuery.toLowerCase();
-    const filtered = conversations.filter(conv => {
-      const otherName = conv.biker_id === myUserId 
-        ? conv.photographer_name 
-        : conv.biker_name;
-      const lastMessage = conv.last_message || '';
-      
-      return otherName.toLowerCase().includes(query) || 
-             lastMessage.toLowerCase().includes(query);
-    });
-
-    setFilteredConversations(filtered);
   };
 
   useEffect(() => {
@@ -178,7 +150,6 @@ export function MessageList() {
     }
   }, [conversations, searchQuery, myUserId]);
 
-  // Reload conversations when page becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
@@ -194,7 +165,6 @@ export function MessageList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [myUserId]);
 
-  // Subscribe to message updates to remove NEW badge in real-time
   useEffect(() => {
     let subscription;
     
@@ -208,43 +178,25 @@ export function MessageList() {
         }).subscribe({
           next: async ({ data }) => {
             const updatedMessage = data.onUpdateMessage;
-            console.log('Message update received:', updatedMessage);
             
-            // メッセージが既読になった場合
             if (updatedMessage.is_read) {
-              console.log('Message marked as read, updating conversation:', updatedMessage.conversationID);
+              const result = await client.graphql({
+                query: queries.messagesByConversation,
+                variables: { conversationID: updatedMessage.conversationID }
+              });
+              const messages = result.data.messagesByConversation.items || [];
               
-              // 該当する会話の未読メッセージを再確認
-              try {
-                const result = await client.graphql({
-                  query: queries.messagesByConversation,
-                  variables: { conversationID: updatedMessage.conversationID }
-                });
-                const messages = result.data.messagesByConversation.items || [];
-                
-                // 自分宛ての未読メッセージがあるかチェック
-                const hasUnread = messages.some(m => 
-                  m.sender_id !== myUserId && !m.is_read
-                );
-                
-                console.log('Unread status for conversation:', hasUnread);
-                
-                // 会話リストを更新
-                setConversations(prev => prev.map(conv => {
-                  if (conv.id === updatedMessage.conversationID) {
-                    return { ...conv, hasUnread };
-                  }
-                  return conv;
-                }));
-              } catch (error) {
-                console.error('Error checking unread messages:', error);
-              }
+              const unreadCount = messages.filter(m => 
+                m.sender_id !== myUserId && !m.is_read
+              ).length;
+              
+              setConversations(prev => prev.map(conv => 
+                conv.id === updatedMessage.conversationID ? { ...conv, unreadCount } : conv
+              ));
             }
           },
           error: (error) => console.error('Subscription error:', error)
         });
-        
-        console.log('Message update subscription established');
       } catch (error) {
         console.error('Setup subscription error:', error);
       }
@@ -253,19 +205,13 @@ export function MessageList() {
     setupSubscription();
     
     return () => {
-      if (subscription) {
-        console.log('Unsubscribing from message updates');
-        subscription.unsubscribe();
-      }
+      subscription?.unsubscribe();
     };
   }, [myUserId]);
 
-
-
   const handleConversationClick = async (conversation) => {
-    // 即座にNEW表示を消す
     setConversations(prev => prev.map(conv => 
-      conv.id === conversation.id ? { ...conv, hasUnread: false } : conv
+      conv.id === conversation.id ? { ...conv, unreadCount: 0 } : conv
     ));
     
     const otherUserId = conversation.biker_id === myUserId 
@@ -277,7 +223,6 @@ export function MessageList() {
     });
   };
 
-  // Expose refresh function globally for navigation callback
   useEffect(() => {
     window.refreshMessageList = () => {
       setRefreshKey(prev => prev + 1);
@@ -323,13 +268,10 @@ export function MessageList() {
     }
   };
 
-  // 自分が完了済みの会話と、メッセージがまだない会話をフィルタリング
   const filteredConversationsToShow = filteredConversations.filter(conv => {
-    // completed_by に自分のIDが含まれている場合は非表示
     if (conv.completed_by && conv.completed_by.includes(myUserId)) {
       return false;
     }
-    // last_messageが空の場合は非表示（最初のメッセージが送信されるまで表示しない）
     if (!conv.last_message || conv.last_message.trim() === '') {
       return false;
     }
@@ -419,7 +361,7 @@ export function MessageList() {
                             </p>
                           </div>
 
-                          {conversation.hasUnread && (
+                          {conversation.unreadCount > 0 && (
                             <Badge variant="destructive" className="ml-2 font-semibold">
                               NEW
                             </Badge>

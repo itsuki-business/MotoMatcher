@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { mockAPIService } from '@/services/mockAPIService';
-import { useMock } from '@/config/environment';
 import * as mutations from '@/graphql/mutations';
+// --- useMock と mockAPIService 関連の import を削除 ---
 
 export function ReviewComplete() {
   const navigate = useNavigate();
@@ -24,6 +23,7 @@ export function ReviewComplete() {
 
   useEffect(() => {
     if (!conversation || !otherUserId || !myUserId) {
+      // 必要な情報がない場合はホームに戻す
       navigate('/');
     }
   }, [conversation, otherUserId, myUserId, navigate]);
@@ -48,59 +48,41 @@ export function ReviewComplete() {
         comment: comment.trim() || null
       };
 
-      if (useMock) {
-        await mockAPIService.mockCreateReview(reviewInput);
-        
-        // 会話から自分を完了済みとしてマーク（削除はしない）
-        const data = JSON.parse(localStorage.getItem('mockAPIData') || '{}');
-        const convIndex = data.conversations.findIndex(c => c.id === conversation.id);
-        if (convIndex !== -1) {
-          if (!data.conversations[convIndex].completed_by) {
-            data.conversations[convIndex].completed_by = [];
-          }
-          if (!data.conversations[convIndex].completed_by.includes(myUserId)) {
-            data.conversations[convIndex].completed_by.push(myUserId);
-          }
-          
-          // 両方が完了した場合のみ削除
-          const completedBy = data.conversations[convIndex].completed_by;
-          if (completedBy.length >= 2) {
-            data.conversations = data.conversations.filter(c => c.id !== conversation.id);
-            data.messages = data.messages.filter(m => m.conversationID !== conversation.id);
-          }
-        }
-        localStorage.setItem('mockAPIData', JSON.stringify(data));
-      } else {
-        const { generateClient } = await import('aws-amplify/api');
-        const client = generateClient();
+      // --- AWS (useMock = false) のロジックのみ実行 ---
+      const { generateClient } = await import('aws-amplify/api');
+      const client = generateClient();
+
+      // ステップ1: レビューを作成
+      await client.graphql({
+        query: mutations.createReview,
+        variables: { input: reviewInput }
+      });
+      
+      // ステップ2: 会話の completed_by を更新
+      // (schema.graphql で completed_by: [String] が定義されている前提)
+      const completedBy = conversation.completed_by || [];
+      if (!completedBy.includes(myUserId)) {
+        completedBy.push(myUserId);
+      }
+      
+      // ステップ3: 両方が完了した場合のみ削除、そうでなければ更新
+      if (completedBy.length >= 2) {
+        // 両方がレビュー完了したら会話を削除
         await client.graphql({
-          query: mutations.createReview,
-          variables: { input: reviewInput }
+          query: mutations.deleteConversation,
+          variables: { input: { id: conversation.id } }
         });
-        
-        // 会話の completed_by を更新
-        const completedBy = conversation.completed_by || [];
-        if (!completedBy.includes(myUserId)) {
-          completedBy.push(myUserId);
-        }
-        
-        // 両方が完了した場合のみ削除
-        if (completedBy.length >= 2) {
-          await client.graphql({
-            query: mutations.deleteConversation,
-            variables: { input: { id: conversation.id } }
-          });
-        } else {
-          await client.graphql({
-            query: mutations.updateConversation,
-            variables: { 
-              input: { 
-                id: conversation.id,
-                completed_by: completedBy
-              } 
-            }
-          });
-        }
+      } else {
+        // 自分がレビュー完了したことを記録
+        await client.graphql({
+          query: mutations.updateConversation,
+          variables: { 
+            input: { 
+              id: conversation.id,
+              completed_by: completedBy // このフィールドがスキーマに必要
+            } 
+          }
+        });
       }
 
       setSubmitted(true);
@@ -109,8 +91,11 @@ export function ReviewComplete() {
       setTimeout(() => {
         navigate(returnTo || `/messages/${myUserId}`);
       }, 2000);
+
     } catch (err) {
       console.error('Submit review error:', err);
+      // --- エラーログをコンソールに詳しく表示 ---
+      console.error('GraphQL Error Details:', JSON.stringify(err, null, 2));
       setError('レビューの投稿に失敗しました');
     } finally {
       setLoading(false);
@@ -152,7 +137,7 @@ export function ReviewComplete() {
             <CardHeader>
               <CardTitle>依頼完了レビュー</CardTitle>
               <CardDescription>
-                {otherUserName}さんとの撮影はいかがでしたか？
+                {otherUserName || '相手'}さんとの撮影はいかがでしたか？
               </CardDescription>
             </CardHeader>
 
@@ -235,4 +220,3 @@ export function ReviewComplete() {
     </div>
   );
 }
-

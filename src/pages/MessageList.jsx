@@ -308,7 +308,7 @@ export function MessageList() {
       }
       
       // レビュー画面に遷移
-      navigate('/review-complete', { 
+      navigate(`/messages/${myUserId}/${otherUserId}/review`, { 
         state: { 
           conversation,
           otherUserId,

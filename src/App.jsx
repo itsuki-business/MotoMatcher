@@ -45,6 +45,7 @@ function App() {
               <Route path="photographer-detail" element={<PhotographerDetail />} />
               <Route path="messages/:myUserId" element={<MessageList />} />
               <Route path="messages/:myUserId/:otherUserId" element={<UserMessage />} />
+              <Route path="messages/:myUserId/:otherUserId/review" element={<ReviewComplete />} />
               <Route path="reviews" element={<Reviews />} />
               <Route path="terms" element={<Terms />} />
               <Route path="privacy-policy" element={<PrivacyPolicy />} />

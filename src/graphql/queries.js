@@ -19,7 +19,6 @@ export const getUser = /* GraphQL */ `
       website_url
       minimum_rate
       rate_details
-      owner
       portfolioItems {
         nextToken
         __typename
@@ -46,6 +45,7 @@ export const getUser = /* GraphQL */ `
       }
       createdAt
       updatedAt
+      owner
       __typename
     }
   }
@@ -73,9 +73,9 @@ export const listUsers = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       nextToken
@@ -108,9 +108,9 @@ export const getPortfolio = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       createdAt
@@ -170,9 +170,9 @@ export const getConversation = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       photographer {
@@ -191,9 +191,9 @@ export const getConversation = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       messages {
@@ -272,9 +272,9 @@ export const getMessage = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       createdAt
@@ -332,9 +332,9 @@ export const getReview = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       reviewee {
@@ -353,9 +353,9 @@ export const getReview = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       createdAt

@@ -24,7 +24,6 @@ type User @model @auth(rules: [
   website_url: String
   minimum_rate: Int
   rate_details: String
-  owner: String @auth(rules: [{ allow: owner, operations: [read, delete] }])
   
   portfolioItems: [Portfolio] @hasMany(indexName: "byPhotographer", fields: ["id"])
   conversationsAsBiker: [Conversation] @hasMany(indexName: "byBiker", fields: ["id"])

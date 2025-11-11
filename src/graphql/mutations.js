@@ -22,7 +22,6 @@ export const createUser = /* GraphQL */ `
       website_url
       minimum_rate
       rate_details
-      owner
       portfolioItems {
         nextToken
         __typename
@@ -49,6 +48,7 @@ export const createUser = /* GraphQL */ `
       }
       createdAt
       updatedAt
+      owner
       __typename
     }
   }
@@ -74,7 +74,6 @@ export const updateUser = /* GraphQL */ `
       website_url
       minimum_rate
       rate_details
-      owner
       portfolioItems {
         nextToken
         __typename
@@ -101,6 +100,7 @@ export const updateUser = /* GraphQL */ `
       }
       createdAt
       updatedAt
+      owner
       __typename
     }
   }
@@ -126,7 +126,6 @@ export const deleteUser = /* GraphQL */ `
       website_url
       minimum_rate
       rate_details
-      owner
       portfolioItems {
         nextToken
         __typename
@@ -153,6 +152,7 @@ export const deleteUser = /* GraphQL */ `
       }
       createdAt
       updatedAt
+      owner
       __typename
     }
   }
@@ -185,9 +185,9 @@ export const createPortfolio = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       createdAt
@@ -224,9 +224,9 @@ export const updatePortfolio = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       createdAt
@@ -263,9 +263,9 @@ export const deletePortfolio = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       createdAt
@@ -305,9 +305,9 @@ export const createConversation = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       photographer {
@@ -326,9 +326,9 @@ export const createConversation = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       messages {
@@ -372,9 +372,9 @@ export const updateConversation = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       photographer {
@@ -393,9 +393,9 @@ export const updateConversation = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       messages {
@@ -439,9 +439,9 @@ export const deleteConversation = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       photographer {
@@ -460,9 +460,9 @@ export const deleteConversation = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       messages {
@@ -518,9 +518,9 @@ export const createMessage = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       createdAt
@@ -572,9 +572,9 @@ export const updateMessage = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       createdAt
@@ -626,9 +626,9 @@ export const deleteMessage = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       createdAt
@@ -665,9 +665,9 @@ export const createReview = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       reviewee {
@@ -686,9 +686,9 @@ export const createReview = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       createdAt
@@ -725,9 +725,9 @@ export const updateReview = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       reviewee {
@@ -746,9 +746,9 @@ export const updateReview = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       createdAt
@@ -785,9 +785,9 @@ export const deleteReview = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       reviewee {
@@ -806,9 +806,9 @@ export const deleteReview = /* GraphQL */ `
         website_url
         minimum_rate
         rate_details
-        owner
         createdAt
         updatedAt
+        owner
         __typename
       }
       createdAt

@@ -56,21 +56,29 @@ export function HomeForRegister() {
       
       if (useMock) {
         const result = await mockAPIService.mockListPhotographers();
+        console.log('Mock photographers loaded:', result.items);
         setPhotographers(result.items);
       } else {
         const { generateClient } = await import('aws-amplify/api');
         const client = generateClient();
+        
+        // listUsersクエリを使用してフォトグラファーを取得
         const result = await client.graphql({
-          query: queries.listPhotographers,
+          query: queries.listUsers,
           variables: {
-            filter: { user_type: { eq: 'photographer' } }
-          },
-          authMode: 'userPool'
+            filter: { 
+              user_type: { eq: 'photographer' }
+            }
+          }
         });
-        setPhotographers(result.data.listUsers.items);
+        
+        console.log('Photographers loaded from API:', result.data.listUsers.items);
+        setPhotographers(result.data.listUsers.items || []);
       }
     } catch (error) {
       console.error('Load photographers error:', error);
+      // エラー時は空配列を設定
+      setPhotographers([]);
     } finally {
       setLoading(false);
     }
@@ -78,10 +86,12 @@ export function HomeForRegister() {
 
   const applyFilters = () => {
     let filtered = [...photographers];
+    console.log('Total photographers before filter:', filtered.length);
 
     // Prefecture filter
     if (filters.prefecture && filters.prefecture !== 'all') {
       filtered = filtered.filter(p => p.prefecture === filters.prefecture);
+      console.log('After prefecture filter:', filtered.length, 'Filter value:', filters.prefecture);
     }
 
     // Genre filter
@@ -89,6 +99,7 @@ export function HomeForRegister() {
       filtered = filtered.filter(p => 
         p.genres && p.genres.includes(filters.genre)
       );
+      console.log('After genre filter:', filtered.length, 'Filter value:', filters.genre);
     }
 
     // Keyword filter
@@ -102,6 +113,7 @@ export function HomeForRegister() {
                bio.includes(keyword) || 
                prefecture.includes(keyword);
       });
+      console.log('After keyword filter:', filtered.length, 'Keyword:', filters.keyword);
     }
 
     // Rate filter - show only photographers with minimum_rate less than or equal to maxRate
@@ -113,8 +125,11 @@ export function HomeForRegister() {
         if (!p.minimum_rate) return true;
         return p.minimum_rate <= maxRateNum;
       });
+      console.log('After rate filter:', filtered.length, 'Max rate:', filters.maxRate);
     }
 
+    console.log('Final filtered photographers:', filtered.length);
+    console.log('Filtered photographers data:', filtered);
     setFilteredPhotographers(filtered);
   };
 

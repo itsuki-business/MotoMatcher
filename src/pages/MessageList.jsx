@@ -265,6 +265,11 @@ export function MessageList() {
       ? conversation.photographer_id 
       : conversation.biker_id;
     
+    // Mark conversation as read locally
+    setConversations(prev => prev.map(conv => 
+      conv.id === conversation.id ? { ...conv, hasUnread: false } : conv
+    ));
+    
     navigate(`/messages/${myUserId}/${otherUserId}`);
   };
 

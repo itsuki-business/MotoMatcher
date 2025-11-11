@@ -20,13 +20,13 @@ export function ConversationActions({ conversation, onComplete, onCancel, curren
   const isPhotographer = appUser?.user_type === 'photographer';
 
   const handleComplete = () => {
-    setShowCompleteDialog(false);
     onComplete?.(conversation);
+    setShowCompleteDialog(false);
   };
 
   const handleCancel = () => {
-    setShowCancelDialog(false);
     onCancel?.(conversation);
+    setShowCancelDialog(false);
   };
 
   return (

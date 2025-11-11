@@ -28,81 +28,6 @@ export function MessageList() {
   const [appUser, setAppUser] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    loadCurrentUser();
-    loadConversations();
-  }, [myUserId, refreshKey]);
-
-  useEffect(() => {
-    filterConversations();
-  }, [conversations, searchQuery]);
-
-  // Reload conversations when page becomes visible
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        loadConversations(false);
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [myUserId]);
-
-  // Subscribe to message updates to remove NEW badge in real-time
-  useEffect(() => {
-    if (!conversations.length) return;
-
-    let subscription;
-    
-    const setupSubscription = async () => {
-      try {
-        if (useMock) {
-          const handleMessagesRead = (event) => {
-            const { conversationId } = event.detail;
-            setConversations(prev => prev.map(conv => 
-              conv.id === conversationId ? { ...conv, hasUnread: false } : conv
-            ));
-          };
-          
-          window.addEventListener('messagesRead', handleMessagesRead);
-          return () => window.removeEventListener('messagesRead', handleMessagesRead);
-        } else {
-          const { generateClient } = await import('aws-amplify/api');
-          const client = generateClient();
-          
-          subscription = client.graphql({
-            query: subscriptions.onUpdateMessage
-          }).subscribe({
-            next: ({ data }) => {
-              const updatedMessage = data.onUpdateMessage;
-              if (updatedMessage.is_read) {
-                setConversations(prev => prev.map(conv => {
-                  if (conv.id === updatedMessage.conversationID) {
-                    return { ...conv, hasUnread: false };
-                  }
-                  return conv;
-                }));
-              }
-            },
-            error: (error) => console.error('Subscription error:', error)
-          });
-        }
-      } catch (error) {
-        console.error('Setup subscription error:', error);
-      }
-    };
-
-    const cleanup = setupSubscription();
-    return () => {
-      if (cleanup instanceof Promise) {
-        cleanup.then(fn => fn && fn());
-      } else {
-        subscription?.unsubscribe();
-      }
-    };
-  }, [conversations, myUserId]);
-
   const loadCurrentUser = async () => {
     try {
       let currentUser;
@@ -164,7 +89,6 @@ export function MessageList() {
         ];
       }
 
-      // Load profile images and check for unread messages
       const conversationsWithImages = [];
       
       for (const conversation of conversationsList) {
@@ -232,7 +156,6 @@ export function MessageList() {
       }
 
       setConversations(prev => {
-        // 既存の会話のprofileImageUrlを保持
         return conversationsWithImages.map(newConv => {
           const existingConv = prev.find(c => c.id === newConv.id);
           if (existingConv && existingConv.profileImageUrl && !newConv.profileImageUrl) {
@@ -268,6 +191,99 @@ export function MessageList() {
     setFilteredConversations(filtered);
   };
 
+  useEffect(() => {
+    loadCurrentUser();
+    loadConversations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myUserId, refreshKey]);
+
+  useEffect(() => {
+    if (!searchQuery) {
+      setFilteredConversations(conversations);
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filtered = conversations.filter(conv => {
+        const otherName = conv.biker_id === myUserId 
+          ? conv.photographer_name 
+          : conv.biker_name;
+        const lastMessage = conv.last_message || '';
+        
+        return otherName.toLowerCase().includes(query) || 
+               lastMessage.toLowerCase().includes(query);
+      });
+      setFilteredConversations(filtered);
+    }
+  }, [conversations, searchQuery, myUserId]);
+
+  // Reload conversations when page becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadConversations(false);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myUserId]);
+
+  // Subscribe to message updates to remove NEW badge in real-time
+  useEffect(() => {
+    if (!conversations.length) return;
+
+    let subscription;
+    
+    const setupSubscription = async () => {
+      try {
+        if (useMock) {
+          const handleMessagesRead = (event) => {
+            const { conversationId } = event.detail;
+            setConversations(prev => prev.map(conv => 
+              conv.id === conversationId ? { ...conv, hasUnread: false } : conv
+            ));
+          };
+          
+          window.addEventListener('messagesRead', handleMessagesRead);
+          return () => window.removeEventListener('messagesRead', handleMessagesRead);
+        } else {
+          const { generateClient } = await import('aws-amplify/api');
+          const client = generateClient();
+          
+          subscription = client.graphql({
+            query: subscriptions.onUpdateMessage
+          }).subscribe({
+            next: ({ data }) => {
+              const updatedMessage = data.onUpdateMessage;
+              if (updatedMessage.is_read) {
+                setConversations(prev => prev.map(conv => {
+                  if (conv.id === updatedMessage.conversationID) {
+                    return { ...conv, hasUnread: false };
+                  }
+                  return conv;
+                }));
+              }
+            },
+            error: (error) => console.error('Subscription error:', error)
+          });
+        }
+      } catch (error) {
+        console.error('Setup subscription error:', error);
+      }
+    };
+
+    const cleanup = setupSubscription();
+    return () => {
+      if (cleanup instanceof Promise) {
+        cleanup.then(fn => fn && fn()).catch(err => console.error('Cleanup error:', err));
+      } else {
+        subscription?.unsubscribe();
+      }
+    };
+  }, [myUserId, useMock]);
+
+
+
   const handleConversationClick = (conversation) => {
     const otherUserId = conversation.biker_id === myUserId 
       ? conversation.photographer_id 
@@ -289,30 +305,24 @@ export function MessageList() {
   }, []);
 
   const handleComplete = async (conversation) => {
-    console.log('MessageList handleComplete called');
-    console.log('conversation:', conversation);
-    console.log('myUserId:', myUserId);
-    
-    const otherUserId = conversation.biker_id === myUserId 
-      ? conversation.photographer_id 
-      : conversation.biker_id;
-    
-    console.log('otherUserId:', otherUserId);
-    
-    const reviewPath = `/messages/${myUserId}/${otherUserId}/review`;
-    console.log('Navigating to:', reviewPath);
-    
-    // レビュー画面に遷移
-    navigate(reviewPath, { 
-      state: { 
-        conversation,
-        otherUserId,
-        myUserId,
-        returnTo: `/messages/${myUserId}`
-      } 
-    });
-    
-    console.log('Navigate called');
+    try {
+      const otherUserId = conversation.biker_id === myUserId 
+        ? conversation.photographer_id 
+        : conversation.biker_id;
+      
+      const reviewPath = `/messages/${myUserId}/${otherUserId}/review`;
+      
+      navigate(reviewPath, { 
+        state: { 
+          conversation,
+          otherUserId,
+          myUserId,
+          returnTo: `/messages/${myUserId}`
+        } 
+      });
+    } catch (error) {
+      console.error('Complete conversation error:', error);
+    }
   };
 
   const handleCancel = async (conversation) => {

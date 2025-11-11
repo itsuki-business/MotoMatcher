@@ -20,7 +20,12 @@ export function ConversationActions({ conversation, onComplete, onCancel, curren
   const isPhotographer = appUser?.user_type === 'photographer';
 
   const handleComplete = () => {
-    onComplete?.(conversation);
+    console.log('ConversationActions handleComplete called');
+    console.log('conversation:', conversation);
+    console.log('onComplete exists:', !!onComplete);
+    if (onComplete) {
+      onComplete(conversation);
+    }
     setShowCompleteDialog(false);
   };
 

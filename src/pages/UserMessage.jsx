@@ -445,7 +445,12 @@ export function UserMessage() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate(`/messages/${myUserId}`)}
+          onClick={() => {
+            if (window.refreshMessageList) {
+              window.refreshMessageList();
+            }
+            navigate(`/messages/${myUserId}`);
+          }}
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>

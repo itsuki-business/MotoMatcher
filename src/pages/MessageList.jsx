@@ -26,11 +26,12 @@ export function MessageList() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [appUser, setAppUser] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     loadCurrentUser();
     loadConversations();
-  }, [myUserId]);
+  }, [myUserId, refreshKey]);
 
   useEffect(() => {
     filterConversations();
@@ -265,20 +266,32 @@ export function MessageList() {
       ? conversation.photographer_id 
       : conversation.biker_id;
     
-    // Mark conversation as read locally
-    setConversations(prev => prev.map(conv => 
-      conv.id === conversation.id ? { ...conv, hasUnread: false } : conv
-    ));
-    
-    navigate(`/messages/${myUserId}/${otherUserId}`);
+    navigate(`/messages/${myUserId}/${otherUserId}`, {
+      state: { from: 'messageList' }
+    });
   };
 
+  // Expose refresh function globally for navigation callback
+  useEffect(() => {
+    window.refreshMessageList = () => {
+      setRefreshKey(prev => prev + 1);
+    };
+    return () => {
+      delete window.refreshMessageList;
+    };
+  }, []);
+
   const handleComplete = async (conversation) => {
+    console.log('MessageList handleComplete called');
+    console.log('conversation:', conversation);
+    console.log('myUserId:', myUserId);
     try {
       // 会話データに「誰が完了したか」を記録
       const otherUserId = conversation.biker_id === myUserId 
         ? conversation.photographer_id 
         : conversation.biker_id;
+      
+      console.log('otherUserId:', otherUserId);
       
       // completed_by フィールドを追加/更新
       if (useMock) {
@@ -312,8 +325,12 @@ export function MessageList() {
         });
       }
       
+      const reviewPath = `/messages/${myUserId}/${otherUserId}/review`;
+      console.log('Navigating to:', reviewPath);
+      console.log('Navigation state:', { conversation, otherUserId, myUserId });
+      
       // レビュー画面に遷移
-      navigate(`/messages/${myUserId}/${otherUserId}/review`, { 
+      navigate(reviewPath, { 
         state: { 
           conversation,
           otherUserId,
@@ -321,6 +338,8 @@ export function MessageList() {
           returnTo: `/messages/${myUserId}`
         } 
       });
+      
+      console.log('Navigate called');
     } catch (error) {
       console.error('Complete conversation error:', error);
     }

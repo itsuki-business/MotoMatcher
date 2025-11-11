@@ -49,49 +49,55 @@ export function MessageList() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [myUserId]);
 
-  // Subscribe to user profile updates (AWS only)
+  // Subscribe to message updates to remove NEW badge in real-time
   useEffect(() => {
-    if (useMock || !conversations.length) return;
+    if (!conversations.length) return;
 
     let subscription;
+    let pollInterval;
+    
     const setupSubscription = async () => {
       try {
-        const { generateClient } = await import('aws-amplify/api');
-        const client = generateClient();
-        
-        subscription = client.graphql({
-          query: subscriptions.onUpdateUser
-        }).subscribe({
-          next: ({ data }) => {
-            const updatedUser = data.onUpdateUser;
-            
+        if (useMock) {
+          pollInterval = setInterval(() => {
             setConversations(prev => prev.map(conv => {
-              const otherUserId = conv.biker_id === myUserId ? conv.photographer_id : conv.biker_id;
-              if (otherUserId === updatedUser.id && updatedUser.profile_image) {
-                (async () => {
-                  try {
-                    const { getUrl } = await import('aws-amplify/storage');
-                    const urlResult = await getUrl({ path: updatedUser.profile_image });
-                    setConversations(current => current.map(c => 
-                      c.id === conv.id ? { ...c, profileImageUrl: urlResult.url.href } : c
-                    ));
-                  } catch (error) {
-                    console.error('Error loading updated profile image:', error);
-                  }
-                })();
-              }
-              return conv;
+              const data = JSON.parse(localStorage.getItem('mockAPIData') || '{}');
+              const messages = (data.messages || []).filter(m => m.conversationID === conv.id);
+              const hasUnread = messages.some(m => m.sender_id !== myUserId && !m.is_read);
+              return { ...conv, hasUnread };
             }));
-          },
-          error: (error) => console.error('Subscription error:', error)
-        });
+          }, 1000);
+        } else {
+          const { generateClient } = await import('aws-amplify/api');
+          const client = generateClient();
+          
+          subscription = client.graphql({
+            query: subscriptions.onUpdateMessage
+          }).subscribe({
+            next: ({ data }) => {
+              const updatedMessage = data.onUpdateMessage;
+              if (updatedMessage.is_read) {
+                setConversations(prev => prev.map(conv => {
+                  if (conv.id === updatedMessage.conversationID) {
+                    return { ...conv, hasUnread: false };
+                  }
+                  return conv;
+                }));
+              }
+            },
+            error: (error) => console.error('Subscription error:', error)
+          });
+        }
       } catch (error) {
         console.error('Setup subscription error:', error);
       }
     };
 
     setupSubscription();
-    return () => subscription?.unsubscribe();
+    return () => {
+      subscription?.unsubscribe();
+      if (pollInterval) clearInterval(pollInterval);
+    };
   }, [conversations, myUserId]);
 
   const loadCurrentUser = async () => {
@@ -191,7 +197,6 @@ export function MessageList() {
           console.error('Error loading user data:', error);
         }
 
-        // Check for unread messages
         let hasUnread = false;
         try {
           let messages = [];
@@ -208,7 +213,6 @@ export function MessageList() {
             messages = result.data.messagesByConversation.items || [];
           }
           
-          // Check if there are any unread messages from the other user
           hasUnread = messages.some(m => 
             m.sender_id !== myUserId && !m.is_read
           );
@@ -285,64 +289,27 @@ export function MessageList() {
     console.log('MessageList handleComplete called');
     console.log('conversation:', conversation);
     console.log('myUserId:', myUserId);
-    try {
-      // 会話データに「誰が完了したか」を記録
-      const otherUserId = conversation.biker_id === myUserId 
-        ? conversation.photographer_id 
-        : conversation.biker_id;
-      
-      console.log('otherUserId:', otherUserId);
-      
-      // completed_by フィールドを追加/更新
-      if (useMock) {
-        const data = JSON.parse(localStorage.getItem('mockAPIData') || '{}');
-        const convIndex = data.conversations.findIndex(c => c.id === conversation.id);
-        if (convIndex !== -1) {
-          if (!data.conversations[convIndex].completed_by) {
-            data.conversations[convIndex].completed_by = [];
-          }
-          if (!data.conversations[convIndex].completed_by.includes(myUserId)) {
-            data.conversations[convIndex].completed_by.push(myUserId);
-          }
-          localStorage.setItem('mockAPIData', JSON.stringify(data));
-        }
-      } else {
-        // AWS implementation
-        const { generateClient } = await import('aws-amplify/api');
-        const client = generateClient();
-        const completedBy = conversation.completed_by || [];
-        if (!completedBy.includes(myUserId)) {
-          completedBy.push(myUserId);
-        }
-        await client.graphql({
-          query: mutations.updateConversation,
-          variables: { 
-            input: { 
-              id: conversation.id,
-              completed_by: completedBy
-            } 
-          }
-        });
-      }
-      
-      const reviewPath = `/messages/${myUserId}/${otherUserId}/review`;
-      console.log('Navigating to:', reviewPath);
-      console.log('Navigation state:', { conversation, otherUserId, myUserId });
-      
-      // レビュー画面に遷移
-      navigate(reviewPath, { 
-        state: { 
-          conversation,
-          otherUserId,
-          myUserId,
-          returnTo: `/messages/${myUserId}`
-        } 
-      });
-      
-      console.log('Navigate called');
-    } catch (error) {
-      console.error('Complete conversation error:', error);
-    }
+    
+    const otherUserId = conversation.biker_id === myUserId 
+      ? conversation.photographer_id 
+      : conversation.biker_id;
+    
+    console.log('otherUserId:', otherUserId);
+    
+    const reviewPath = `/messages/${myUserId}/${otherUserId}/review`;
+    console.log('Navigating to:', reviewPath);
+    
+    // レビュー画面に遷移
+    navigate(reviewPath, { 
+      state: { 
+        conversation,
+        otherUserId,
+        myUserId,
+        returnTo: `/messages/${myUserId}`
+      } 
+    });
+    
+    console.log('Navigate called');
   };
 
   const handleCancel = async (conversation) => {

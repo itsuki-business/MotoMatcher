@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MessageCircle, Search, AlertCircle } from 'lucide-react'; // AlertCircle をインポート
+import { MessageCircle, Search, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -11,12 +11,12 @@ import { formatDate } from '@/lib/utils';
 import { useUnreadCount } from '@/contexts/UnreadContext';
 import * as queries from '@/graphql/queries';
 import * as mutations from '@/graphql/mutations';
-// --- 修正: subscriptions は不要になったため削除 ---
-// import * as subscriptions from '@/graphql/subscriptions';
+import * as subscriptions from '@/graphql/subscriptions'; // サブスクリプションをインポート
 
 // Mock imports (useMock = true の場合のみ)
 import { mockAPIService } from '@/services/mockAPIService';
 import { mockStorageService } from '@/services/mockStorageService';
+import { mockAuthService } from '@/services/mockAuthService';
 import { useMock } from '@/config/environment';
 
 export function MessageList() {
@@ -29,14 +29,17 @@ export function MessageList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [appUser, setAppUser] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  
-  // --- ▼ 修正: エラーハンドリング用のStateを追加 ▼ ---
   const [error, setError] = useState(null);
 
   const loadCurrentUser = async () => {
     try {
       if (useMock) {
         // Mock
+        const currentUser = await mockAuthService.getCurrentUser();
+        if (currentUser) {
+          const userData = await mockAPIService.mockGetUser(currentUser.userId);
+          setAppUser(userData);
+        }
       } else {
         const { getCurrentUser } = await import('aws-amplify/auth');
         const currentUser = await getCurrentUser();
@@ -54,7 +57,6 @@ export function MessageList() {
       }
     } catch (error) {
       console.error('Load current user error:', error);
-      // --- ▼ 修正: エラーをセット ▼ ---
       setError('ユーザー情報の読み込みに失敗しました: ' + error.message);
     }
   };
@@ -152,12 +154,11 @@ export function MessageList() {
 
       setConversations(conversationsWithData);
       
-      // --- ▼ 修正: グローバルの未読数もここで更新 ▼ ---
+      // グローバルの未読数もここで更新
       refreshUnreadCount();
 
     } catch (error) {
       console.error('Load conversations error:', error);
-      // --- ▼ 修正: エラーをセット ▼ ---
       setError('会話の読み込みに失敗しました: ' + error.message);
     } finally {
       setLoading(false);
@@ -202,17 +203,103 @@ export function MessageList() {
   }, [myUserId]);
 
 
-  // --- ▼ 修正: リアルタイム更新をサブスクリプションからポーリングに変更 ▼ ---
+  // --- ▼ 修正: GraphQLサブスクリプションの実装 ▼ ---
   useEffect(() => {
-    // 5秒ごとに会話リストと未読数を再取得
-    const interval = setInterval(() => {
-      if (!document.hidden) { // 画面がアクティブな時だけ
-        loadConversations(false); // false = ローディングスピナー非表示
+    // Mock環境ではサブスクリプションをスキップ
+    if (useMock) {
+      return;
+    }
+
+    let createSubscription;
+    let updateSubscription;
+    let client;
+
+    const setupSubscription = async () => {
+      try {
+        const { generateClient } = await import('aws-amplify/api');
+        client = generateClient();
+        
+        // 1. 新しいメッセージ（未読）を検知するサブスクリプション
+        createSubscription = client.graphql({
+          query: subscriptions.onCreateMessage
+        }).subscribe({
+          next: ({ data }) => {
+            const newMessage = data.onCreateMessage;
+            
+            // 自分宛のメッセージか、該当する会話がリストにあるか確認
+            if (newMessage.sender_id !== myUserId) {
+              setConversations(prev => {
+                const targetConvIndex = prev.findIndex(c => c.id === newMessage.conversationID);
+                
+                if (targetConvIndex > -1) {
+                  // 該当の会話の未読数をインクリメントして状態を更新
+                  const updatedConvs = [...prev];
+                  const targetConv = { ...updatedConvs[targetConvIndex] };
+                  targetConv.unreadCount = (targetConv.unreadCount || 0) + 1;
+                  targetConv.last_message = newMessage.content || '[画像]';
+                  targetConv.last_message_at = newMessage.createdAt;
+                  updatedConvs[targetConvIndex] = targetConv;
+                  
+                  // 未読メッセージが届いたらリストの先頭に持ってくる（ソート）
+                  updatedConvs.sort((a, b) => new Date(b.last_message_at) - new Date(a.last_message_at));
+                  
+                  refreshUnreadCount(); // グローバルな未読数も更新
+                  return updatedConvs;
+                }
+                return prev;
+              });
+            }
+          },
+          error: (error) => console.error('onCreateMessage Subscription error:', error)
+        });
+
+        // 2. 既読更新を検知するサブスクリプション
+        updateSubscription = client.graphql({
+          query: subscriptions.onUpdateMessage
+        }).subscribe({
+          next: async ({ data }) => {
+            const updatedMessage = data.onUpdateMessage;
+            
+            // メッセージが既読になった場合
+            if (updatedMessage.is_read && updatedMessage.sender_id !== myUserId) {
+              try {
+                // 該当の会話の未読数を再計算
+                const result = await client.graphql({
+                  query: queries.messagesByConversation,
+                  variables: { conversationID: updatedMessage.conversationID }
+                });
+                const messages = result.data.messagesByConversation.items || [];
+                
+                const unreadCount = messages.filter(m => 
+                  m.sender_id !== myUserId && !m.is_read
+                ).length;
+                
+                setConversations(prev => prev.map(conv => 
+                  conv.id === updatedMessage.conversationID ? { ...conv, unreadCount } : conv
+                ));
+                
+                refreshUnreadCount(); // グローバルな未読数も更新
+              } catch (error) {
+                console.error('Error recalculating unread count on update:', error);
+              }
+            }
+          },
+          error: (error) => console.error('onUpdateMessage Subscription error:', error)
+        });
+      } catch (error) {
+        console.error('Setup subscription error:', error);
+        setError('リアルタイム更新の接続に失敗しました: ' + error.message);
       }
-    }, 5000); // 5秒
+    };
+
+    setupSubscription();
     
-    return () => clearInterval(interval);
-  }, [myUserId]); // myUserId が変わった時のみタイマーを再設定
+    return () => {
+      // コンポーネントがアンマウントされる際にサブスクリプションを解除
+      createSubscription?.unsubscribe();
+      updateSubscription?.unsubscribe();
+    };
+  }, [myUserId, refreshUnreadCount, useMock]); // useMock を依存配列に追加
   // --- ▲ 修正箇所 エンド ▲ ---
 
 
@@ -281,15 +368,6 @@ export function MessageList() {
   };
 
   const filteredConversationsToShow = filteredConversations.filter(conv => {
-    // Mock環境では completed_by が存在しない可能性があるためチェック
-    if (useMock) {
-      if (!conv.last_message || conv.last_message.trim() === '') {
-        return false;
-      }
-      return true;
-    }
-    
-    // AWS環境のロジック
     if (conv.completed_by && conv.completed_by.includes(myUserId)) {
       return false;
     }
@@ -337,7 +415,6 @@ export function MessageList() {
             </div>
           </div>
 
-          {/* --- ▼ 修正: エラー表示 ▼ --- */}
           {error && (
             <Card className="mb-4 border-destructive bg-destructive/10">
               <CardContent className="p-4 flex items-center gap-3">
@@ -408,13 +485,13 @@ export function MessageList() {
                             appUser={appUser}
                           />
                         )}
-                        {useMock && (
+                        {useMock && appUser && ( // Mock環境でもappUserが読み込めていれば表示
                            <ConversationActions
                             conversation={conversation}
                             onComplete={handleComplete}
                             onCancel={handleCancel}
                             currentUserId={myUserId}
-                            appUser={{ user_type: 'client' }} // Mock時は仮のappUserを渡す
+                            appUser={appUser}
                           />
                         )}
                       </CardContent>

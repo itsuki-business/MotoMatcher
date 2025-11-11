@@ -75,7 +75,7 @@ type Conversation @model @auth(rules: [
 
 type Message @model @auth(rules: [
   { allow: owner, ownerField: "sender_id" },
-  { allow: private, operations: [read] }
+  { allow: private, operations: [read, update] }
 ]) {
   id: ID!
   conversationID: ID! @index(name: "byConversation", sortKeyFields: ["createdAt"], queryField: "messagesByConversation")

@@ -113,8 +113,13 @@ export function MessageList() {
             : conversation.biker_id;
           
           let userData;
+          let profileImageUrl = null;
+          
           if (useMock) {
             userData = await mockAPIService.mockGetUser(otherUserId);
+            if (userData?.profile_image) {
+              profileImageUrl = await mockStorageService.getImageUrl(userData.profile_image);
+            }
           } else {
             const { generateClient } = await import('aws-amplify/api');
             const client = generateClient();
@@ -123,16 +128,11 @@ export function MessageList() {
               variables: { id: otherUserId }
             });
             userData = result.data.getUser;
-          }
-
-          let profileImageUrl = null;
-          if (userData?.profile_image) {
-            if (useMock) {
-              profileImageUrl = await mockStorageService.getImageUrl(userData.profile_image);
-            } else {
+            
+            if (userData?.profile_image) {
               const { getUrl } = await import('aws-amplify/storage');
-              const result = await getUrl({ path: userData.profile_image });
-              profileImageUrl = result.url.href;
+              const urlResult = await getUrl({ path: userData.profile_image });
+              profileImageUrl = urlResult.url.href;
             }
           }
 
@@ -246,7 +246,7 @@ export function MessageList() {
       }
       
       // レビュー画面に遷移
-      navigate('/review-complete', { 
+      navigate(`/messages/${myUserId}/${otherUserId}/review`, { 
         state: { 
           conversation,
           otherUserId,
@@ -284,10 +284,17 @@ export function MessageList() {
     }
   };
 
-  // 自分が完了済みの会話をフィルタリング
+  // 自分が完了済みの会話と、メッセージがまだない会話をフィルタリング
   const filteredConversationsToShow = filteredConversations.filter(conv => {
     // completed_by に自分のIDが含まれている場合は非表示
-    return !conv.completed_by || !conv.completed_by.includes(myUserId);
+    if (conv.completed_by && conv.completed_by.includes(myUserId)) {
+      return false;
+    }
+    // last_messageが空の場合は非表示（最初のメッセージが送信されるまで表示しない）
+    if (!conv.last_message || conv.last_message.trim() === '') {
+      return false;
+    }
+    return true;
   });
 
   if (loading) {

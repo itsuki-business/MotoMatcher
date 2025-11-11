@@ -7,7 +7,7 @@ enum UserType {
 
 type User @model @auth(rules: [
   { allow: owner, operations: [create, read, update, delete] },
-  { allow: private, operations: [read] }
+  { allow: private, provider: userPools, operations: [read] }
 ]) {
   id: ID!
   email: String!

@@ -8,11 +8,15 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ConversationActions } from '@/components/messages/ConversationActions';
 import { formatDate } from '@/lib/utils';
-
 import { useUnreadCount } from '@/contexts/UnreadContext';
 import * as queries from '@/graphql/queries';
 import * as mutations from '@/graphql/mutations';
 import * as subscriptions from '@/graphql/subscriptions';
+
+// Mock imports (useMock = true の場合のみ)
+import { mockAPIService } from '@/services/mockAPIService';
+import { mockStorageService } from '@/services/mockStorageService';
+import { useMock } from '@/config/environment';
 
 export function MessageList() {
   const navigate = useNavigate();
@@ -27,18 +31,23 @@ export function MessageList() {
 
   const loadCurrentUser = async () => {
     try {
-      const { getCurrentUser } = await import('aws-amplify/auth');
-      const currentUser = await getCurrentUser();
+      if (useMock) {
+        // Mock環境のユーザー取得ロジックは現状ないためスキップ
+        // 必要に応じて mockAuthService.getCurrentUser() と mockAPIService.mockGetUser() を呼ぶ
+      } else {
+        const { getCurrentUser } = await import('aws-amplify/auth');
+        const currentUser = await getCurrentUser();
 
-      if (currentUser) {
-        const userId = currentUser.userId || currentUser.sub;
-        const { generateClient } = await import('aws-amplify/api');
-        const client = generateClient();
-        const result = await client.graphql({
-          query: queries.getUser,
-          variables: { id: userId }
-        });
-        setAppUser(result.data.getUser);
+        if (currentUser) {
+          const userId = currentUser.userId || currentUser.sub;
+          const { generateClient } = await import('aws-amplify/api');
+          const client = generateClient();
+          const result = await client.graphql({
+            query: queries.getUser,
+            variables: { id: userId }
+          });
+          setAppUser(result.data.getUser);
+        }
       }
     } catch (error) {
       console.error('Load current user error:', error);
@@ -51,26 +60,30 @@ export function MessageList() {
         setLoading(true);
       }
       
-      const { generateClient } = await import('aws-amplify/api');
-      const client = generateClient();
-      
-      const bikerConvs = await client.graphql({
-        query: queries.conversationsByBiker,
-        variables: { biker_id: myUserId }
-      });
-      
-      const photographerConvs = await client.graphql({
-        query: queries.conversationsByPhotographer,
-        variables: { photographer_id: myUserId }
-      });
-      
-      const conversationsList = [
-        ...(bikerConvs.data.conversationsByBiker?.items || []),
-        ...(photographerConvs.data.conversationsByPhotographer?.items || [])
-      ];
-
+      let conversationsList = [];
       const conversationsWithData = [];
-      
+      const client = useMock ? null : (await import('aws-amplify/api')).generateClient();
+
+      if (useMock) {
+        const result = await mockAPIService.mockListConversations(myUserId);
+        conversationsList = result.items || [];
+      } else {
+        const bikerConvs = await client.graphql({
+          query: queries.conversationsByBiker,
+          variables: { biker_id: myUserId }
+        });
+        
+        const photographerConvs = await client.graphql({
+          query: queries.conversationsByPhotographer,
+          variables: { photographer_id: myUserId }
+        });
+        
+        conversationsList = [
+          ...(bikerConvs.data.conversationsByBiker?.items || []),
+          ...(photographerConvs.data.conversationsByPhotographer?.items || [])
+        ];
+      }
+
       for (const conversation of conversationsList) {
         const otherUserId = conversation.biker_id === myUserId 
           ? conversation.photographer_id 
@@ -78,36 +91,42 @@ export function MessageList() {
         
         let userData;
         let profileImageUrl = null;
-        
+        let unreadCount = 0;
+
         try {
-          const result = await client.graphql({
-            query: queries.getUser,
-            variables: { id: otherUserId }
-          });
-          userData = result.data.getUser;
-          
-          if (userData?.profile_image) {
-            const { getUrl } = await import('aws-amplify/storage');
-            const urlResult = await getUrl({ path: userData.profile_image });
-            profileImageUrl = urlResult.url.href;
+          if (useMock) {
+            userData = await mockAPIService.mockGetUser(otherUserId);
+            if (userData?.profile_image) {
+              profileImageUrl = await mockStorageService.getImageUrl(userData.profile_image);
+            }
+            const messagesResult = await mockAPIService.mockListMessages(conversation.id);
+            const messages = messagesResult.items || [];
+            unreadCount = messages.filter(m => m.sender_id !== myUserId && !m.is_read).length;
+          } else {
+            const result = await client.graphql({
+              query: queries.getUser,
+              variables: { id: otherUserId }
+            });
+            userData = result.data.getUser;
+            
+            if (userData?.profile_image) {
+              const { getUrl } = await import('aws-amplify/storage');
+              const urlResult = await getUrl({ path: userData.profile_image });
+              profileImageUrl = urlResult.url.href;
+            }
+
+            const messagesResult = await client.graphql({
+              query: queries.messagesByConversation,
+              variables: { conversationID: conversation.id }
+            });
+            const messages = messagesResult.data.messagesByConversation.items || [];
+            
+            unreadCount = messages.filter(m => 
+              m.sender_id !== myUserId && !m.is_read
+            ).length;
           }
         } catch (error) {
-          console.error('Error loading user data:', error);
-        }
-
-        let unreadCount = 0;
-        try {
-          const result = await client.graphql({
-            query: queries.messagesByConversation,
-            variables: { conversationID: conversation.id }
-          });
-          const messages = result.data.messagesByConversation.items || [];
-          
-          unreadCount = messages.filter(m => 
-            m.sender_id !== myUserId && !m.is_read
-          ).length;
-        } catch (error) {
-          console.error('Error checking unread messages:', error);
+          console.error('Error loading conversation details:', error);
         }
 
         conversationsWithData.push({
@@ -117,6 +136,13 @@ export function MessageList() {
           unreadCount
         });
       }
+
+      // --- ▼ 修正箇所 スタート ▼ ---
+      // 会話を最終メッセージ時刻でソート
+      conversationsWithData.sort((a, b) => 
+        new Date(b.last_message_at) - new Date(a.last_message_at)
+      );
+      // --- ▲ 修正箇所 エンド ▲ ---
 
       setConversations(conversationsWithData);
     } catch (error) {
@@ -143,7 +169,7 @@ export function MessageList() {
           : conv.biker_name;
         const lastMessage = conv.last_message || '';
         
-        return otherName.toLowerCase().includes(query) || 
+        return (otherName && otherName.toLowerCase().includes(query)) || 
                lastMessage.toLowerCase().includes(query);
       });
       setFilteredConversations(filtered);
@@ -165,37 +191,89 @@ export function MessageList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [myUserId]);
 
+
+  // --- ▼ 修正箇所 スタート (サブスクリプションのロジック全体) ▼ ---
   useEffect(() => {
-    let subscription;
+    if (useMock) {
+      // Mock環境ではサブスクリプションの代わりにポーリングなどで対応する
+      // (現在は未実装だが、ヘッダーのポーリングで代用される)
+      return;
+    }
+
+    let createSubscription;
+    let updateSubscription;
     
     const setupSubscription = async () => {
       try {
         const { generateClient } = await import('aws-amplify/api');
         const client = generateClient();
         
-        subscription = client.graphql({
+        // 1. 新しいメッセージ（未読）を検知するサブスクリプション
+        createSubscription = client.graphql({
+          query: subscriptions.onCreateMessage
+        }).subscribe({
+          next: ({ data }) => {
+            const newMessage = data.onCreateMessage;
+            
+            // 自分宛のメッセージか、該当する会話がリストにあるか確認
+            if (newMessage.sender_id !== myUserId) {
+              setConversations(prev => {
+                const targetConvIndex = prev.findIndex(c => c.id === newMessage.conversationID);
+                
+                if (targetConvIndex > -1) {
+                  // 該当の会話の未読数をインクリメントして状態を更新
+                  const updatedConvs = [...prev];
+                  const targetConv = { ...updatedConvs[targetConvIndex] };
+                  targetConv.unreadCount = (targetConv.unreadCount || 0) + 1;
+                  targetConv.last_message = newMessage.content || '[画像]';
+                  targetConv.last_message_at = newMessage.createdAt;
+                  updatedConvs[targetConvIndex] = targetConv;
+                  
+                  // 未読メッセージが届いたらリストの先頭に持ってくる（ソート）
+                  updatedConvs.sort((a, b) => new Date(b.last_message_at) - new Date(a.last_message_at));
+                  
+                  refreshUnreadCount(); // グローバルな未読数も更新
+                  return updatedConvs;
+                }
+                return prev;
+              });
+            }
+          },
+          error: (error) => console.error('onCreateMessage Subscription error:', error)
+        });
+
+        // 2. 既読更新を検知するサブスクリプション
+        updateSubscription = client.graphql({
           query: subscriptions.onUpdateMessage
         }).subscribe({
           next: async ({ data }) => {
             const updatedMessage = data.onUpdateMessage;
             
+            // メッセージが既読になった場合
             if (updatedMessage.is_read) {
-              const result = await client.graphql({
-                query: queries.messagesByConversation,
-                variables: { conversationID: updatedMessage.conversationID }
-              });
-              const messages = result.data.messagesByConversation.items || [];
-              
-              const unreadCount = messages.filter(m => 
-                m.sender_id !== myUserId && !m.is_read
-              ).length;
-              
-              setConversations(prev => prev.map(conv => 
-                conv.id === updatedMessage.conversationID ? { ...conv, unreadCount } : conv
-              ));
+              try {
+                // 該当の会話の未読数を再計算
+                const result = await client.graphql({
+                  query: queries.messagesByConversation,
+                  variables: { conversationID: updatedMessage.conversationID }
+                });
+                const messages = result.data.messagesByConversation.items || [];
+                
+                const unreadCount = messages.filter(m => 
+                  m.sender_id !== myUserId && !m.is_read
+                ).length;
+                
+                setConversations(prev => prev.map(conv => 
+                  conv.id === updatedMessage.conversationID ? { ...conv, unreadCount } : conv
+                ));
+                
+                refreshUnreadCount(); // グローバルな未読数も更新
+              } catch (error) {
+                console.error('Error recalculating unread count on update:', error);
+              }
             }
           },
-          error: (error) => console.error('Subscription error:', error)
+          error: (error) => console.error('onUpdateMessage Subscription error:', error)
         });
       } catch (error) {
         console.error('Setup subscription error:', error);
@@ -205,11 +283,15 @@ export function MessageList() {
     setupSubscription();
     
     return () => {
-      subscription?.unsubscribe();
+      createSubscription?.unsubscribe();
+      updateSubscription?.unsubscribe();
     };
-  }, [myUserId]);
+  }, [myUserId, refreshUnreadCount, useMock]); // useMock を依存配列に追加
+  // --- ▲ 修正箇所 エンド ▲ ---
+
 
   const handleConversationClick = async (conversation) => {
+    // UIを即時反映
     setConversations(prev => prev.map(conv => 
       conv.id === conversation.id ? { ...conv, unreadCount: 0 } : conv
     ));
@@ -255,12 +337,16 @@ export function MessageList() {
 
   const handleCancel = async (conversation) => {
     try {
-      const { generateClient } = await import('aws-amplify/api');
-      const client = generateClient();
-      await client.graphql({
-        query: mutations.deleteConversation,
-        variables: { input: { id: conversation.id } }
-      });
+      if (useMock) {
+        await mockAPIService.mockDeleteConversation(conversation.id);
+      } else {
+        const { generateClient } = await import('aws-amplify/api');
+        const client = generateClient();
+        await client.graphql({
+          query: mutations.deleteConversation,
+          variables: { input: { id: conversation.id } }
+        });
+      }
 
       await loadConversations();
     } catch (error) {
@@ -269,6 +355,15 @@ export function MessageList() {
   };
 
   const filteredConversationsToShow = filteredConversations.filter(conv => {
+    // Mock環境では completed_by が存在しない可能性があるためチェック
+    if (useMock) {
+      if (!conv.last_message || conv.last_message.trim() === '') {
+        return false;
+      }
+      return true;
+    }
+    
+    // AWS環境のロジック
     if (conv.completed_by && conv.completed_by.includes(myUserId)) {
       return false;
     }
@@ -368,13 +463,26 @@ export function MessageList() {
                           )}
                         </div>
 
-                        <ConversationActions
-                          conversation={conversation}
-                          onComplete={handleComplete}
-                          onCancel={handleCancel}
-                          currentUserId={myUserId}
-                          appUser={appUser}
-                        />
+                        {/* アクションボタンはMock環境では表示しない（appUserがロードされないため） */}
+                        {!useMock && appUser && (
+                          <ConversationActions
+                            conversation={conversation}
+                            onComplete={handleComplete}
+                            onCancel={handleCancel}
+                            currentUserId={myUserId}
+                            appUser={appUser}
+                          />
+                        )}
+                        {/* Mock環境用の仮表示（必要に応じて） */}
+                        {useMock && (
+                           <ConversationActions
+                            conversation={conversation}
+                            onComplete={handleComplete}
+                            onCancel={handleCancel}
+                            currentUserId={myUserId}
+                            appUser={{ user_type: 'client' }} // Mock時は仮のappUserを渡す
+                          />
+                        )}
                       </CardContent>
                     </Card>
                   </motion.div>
@@ -399,4 +507,3 @@ export function MessageList() {
     </div>
   );
 }
-

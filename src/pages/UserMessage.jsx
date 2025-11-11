@@ -246,10 +246,10 @@ export function UserMessage() {
         const { generateClient } = await import('aws-amplify/api');
         const client = generateClient();
         const messagesResult = await client.graphql({
-          query: queries.listMessages,
+          query: queries.messagesByConversation,
           variables: { conversationID: conv.id }
         });
-        messagesList = messagesResult.data.listMessages.items;
+        messagesList = messagesResult.data.messagesByConversation.items;
       }
       setMessages(messagesList);
 
@@ -342,6 +342,18 @@ export function UserMessage() {
           variables: { input: messageInput }
         });
         setMessages(prev => [...prev, result.data.createMessage]);
+        
+        // Update conversation with last message
+        await client.graphql({
+          query: mutations.updateConversation,
+          variables: {
+            input: {
+              id: conversation.id,
+              last_message: text,
+              last_message_at: new Date().toISOString()
+            }
+          }
+        });
       }
     } catch (error) {
       console.error('Send message error:', error);

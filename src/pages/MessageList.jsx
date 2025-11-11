@@ -147,10 +147,10 @@ export function MessageList() {
               const { generateClient } = await import('aws-amplify/api');
               const client = generateClient();
               const result = await client.graphql({
-                query: queries.listMessages,
+                query: queries.messagesByConversation,
                 variables: { conversationID: conversation.id }
               });
-              messages = result.data.listMessages.items || [];
+              messages = result.data.messagesByConversation.items || [];
             }
             
             // Check if there are any unread messages from the other user

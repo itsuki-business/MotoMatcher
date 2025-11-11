@@ -54,19 +54,19 @@ export function MessageList() {
     if (!conversations.length) return;
 
     let subscription;
-    let pollInterval;
     
     const setupSubscription = async () => {
       try {
         if (useMock) {
-          pollInterval = setInterval(() => {
-            setConversations(prev => prev.map(conv => {
-              const data = JSON.parse(localStorage.getItem('mockAPIData') || '{}');
-              const messages = (data.messages || []).filter(m => m.conversationID === conv.id);
-              const hasUnread = messages.some(m => m.sender_id !== myUserId && !m.is_read);
-              return { ...conv, hasUnread };
-            }));
-          }, 1000);
+          const handleMessagesRead = (event) => {
+            const { conversationId } = event.detail;
+            setConversations(prev => prev.map(conv => 
+              conv.id === conversationId ? { ...conv, hasUnread: false } : conv
+            ));
+          };
+          
+          window.addEventListener('messagesRead', handleMessagesRead);
+          return () => window.removeEventListener('messagesRead', handleMessagesRead);
         } else {
           const { generateClient } = await import('aws-amplify/api');
           const client = generateClient();
@@ -93,10 +93,13 @@ export function MessageList() {
       }
     };
 
-    setupSubscription();
+    const cleanup = setupSubscription();
     return () => {
-      subscription?.unsubscribe();
-      if (pollInterval) clearInterval(pollInterval);
+      if (cleanup instanceof Promise) {
+        cleanup.then(fn => fn && fn());
+      } else {
+        subscription?.unsubscribe();
+      }
     };
   }, [conversations, myUserId]);
 

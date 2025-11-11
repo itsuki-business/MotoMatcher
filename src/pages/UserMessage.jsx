@@ -62,20 +62,18 @@ export function UserMessage() {
                 
                 if (toAdd.length === 0) return prev;
                 
-                // Mark new messages from other user as read
-                const hasNewFromOther = toAdd.some(msg => msg.sender_id !== myUserId && !msg.is_read);
                 toAdd.forEach(msg => {
                   if (msg.sender_id !== myUserId && !msg.is_read) {
-                    mockAPIService.mockMarkMessageAsRead(msg.id).catch(error => {
+                    mockAPIService.mockMarkMessageAsRead(msg.id).then(() => {
+                      refreshUnreadCount();
+                      window.dispatchEvent(new CustomEvent('messagesRead', { 
+                        detail: { conversationId: conversation.id } 
+                      }));
+                    }).catch(error => {
                       console.error('Error marking message as read:', error);
                     });
                   }
                 });
-                
-                if (hasNewFromOther) {
-                  // Refresh unread count after marking as read
-                  setTimeout(() => refreshUnreadCount(), 500);
-                }
                 
                 return [...prev, ...toAdd].sort((a, b) => 
                   new Date(a.createdAt) - new Date(b.createdAt)
@@ -281,8 +279,13 @@ export function UserMessage() {
           }
         }
         
-        // Refresh unread count after marking messages as read
         refreshUnreadCount();
+        
+        if (useMock) {
+          window.dispatchEvent(new CustomEvent('messagesRead', { 
+            detail: { conversationId: conv.id } 
+          }));
+        }
       }
 
       // Load other user info

@@ -1,8 +1,12 @@
-// GraphQL Mutations
+/* eslint-disable */
+// this is an auto generated file. This will be overwritten
 
 export const createUser = /* GraphQL */ `
-  mutation CreateUser($input: CreateUserInput!) {
-    createUser(input: $input) {
+  mutation CreateUser(
+    $input: CreateUserInput!
+    $condition: ModelUserConditionInput
+  ) {
+    createUser(input: $input, condition: $condition) {
       id
       email
       nickname
@@ -18,15 +22,43 @@ export const createUser = /* GraphQL */ `
       website_url
       minimum_rate
       rate_details
+      owner
+      portfolioItems {
+        nextToken
+        __typename
+      }
+      conversationsAsBiker {
+        nextToken
+        __typename
+      }
+      conversationsAsPhotographer {
+        nextToken
+        __typename
+      }
+      reviewsGiven {
+        nextToken
+        __typename
+      }
+      reviewsReceived {
+        nextToken
+        __typename
+      }
+      sentMessages {
+        nextToken
+        __typename
+      }
       createdAt
       updatedAt
+      __typename
     }
   }
 `;
-
 export const updateUser = /* GraphQL */ `
-  mutation UpdateUser($input: UpdateUserInput!) {
-    updateUser(input: $input) {
+  mutation UpdateUser(
+    $input: UpdateUserInput!
+    $condition: ModelUserConditionInput
+  ) {
+    updateUser(input: $input, condition: $condition) {
       id
       email
       nickname
@@ -42,57 +74,212 @@ export const updateUser = /* GraphQL */ `
       website_url
       minimum_rate
       rate_details
+      owner
+      portfolioItems {
+        nextToken
+        __typename
+      }
+      conversationsAsBiker {
+        nextToken
+        __typename
+      }
+      conversationsAsPhotographer {
+        nextToken
+        __typename
+      }
+      reviewsGiven {
+        nextToken
+        __typename
+      }
+      reviewsReceived {
+        nextToken
+        __typename
+      }
+      sentMessages {
+        nextToken
+        __typename
+      }
       createdAt
       updatedAt
+      __typename
     }
   }
 `;
-
 export const deleteUser = /* GraphQL */ `
-  mutation DeleteUser($input: DeleteUserInput!) {
-    deleteUser(input: $input) {
+  mutation DeleteUser(
+    $input: DeleteUserInput!
+    $condition: ModelUserConditionInput
+  ) {
+    deleteUser(input: $input, condition: $condition) {
       id
+      email
+      nickname
+      user_type
+      prefecture
+      bike_maker
+      bike_model
+      bio
+      profile_image
+      genres
+      instagram_url
+      twitter_url
+      website_url
+      minimum_rate
+      rate_details
+      owner
+      portfolioItems {
+        nextToken
+        __typename
+      }
+      conversationsAsBiker {
+        nextToken
+        __typename
+      }
+      conversationsAsPhotographer {
+        nextToken
+        __typename
+      }
+      reviewsGiven {
+        nextToken
+        __typename
+      }
+      reviewsReceived {
+        nextToken
+        __typename
+      }
+      sentMessages {
+        nextToken
+        __typename
+      }
+      createdAt
+      updatedAt
+      __typename
     }
   }
 `;
-
 export const createPortfolio = /* GraphQL */ `
-  mutation CreatePortfolio($input: CreatePortfolioInput!) {
-    createPortfolio(input: $input) {
+  mutation CreatePortfolio(
+    $input: CreatePortfolioInput!
+    $condition: ModelPortfolioConditionInput
+  ) {
+    createPortfolio(input: $input, condition: $condition) {
       id
       photographer_id
       image_key
       title
       description
+      owner
+      photographer {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
       createdAt
+      updatedAt
+      __typename
     }
   }
 `;
-
 export const updatePortfolio = /* GraphQL */ `
-  mutation UpdatePortfolio($input: UpdatePortfolioInput!) {
-    updatePortfolio(input: $input) {
+  mutation UpdatePortfolio(
+    $input: UpdatePortfolioInput!
+    $condition: ModelPortfolioConditionInput
+  ) {
+    updatePortfolio(input: $input, condition: $condition) {
       id
       photographer_id
       image_key
       title
       description
+      owner
+      photographer {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
       createdAt
+      updatedAt
+      __typename
     }
   }
 `;
-
 export const deletePortfolio = /* GraphQL */ `
-  mutation DeletePortfolio($input: DeletePortfolioInput!) {
-    deletePortfolio(input: $input) {
+  mutation DeletePortfolio(
+    $input: DeletePortfolioInput!
+    $condition: ModelPortfolioConditionInput
+  ) {
+    deletePortfolio(input: $input, condition: $condition) {
       id
+      photographer_id
+      image_key
+      title
+      description
+      owner
+      photographer {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
+      createdAt
+      updatedAt
+      __typename
     }
   }
 `;
-
 export const createConversation = /* GraphQL */ `
-  mutation CreateConversation($input: CreateConversationInput!) {
-    createConversation(input: $input) {
+  mutation CreateConversation(
+    $input: CreateConversationInput!
+    $condition: ModelConversationConditionInput
+  ) {
+    createConversation(input: $input, condition: $condition) {
       id
       biker_id
       photographer_id
@@ -101,15 +288,65 @@ export const createConversation = /* GraphQL */ `
       last_message
       last_message_at
       status
+      completed_by
+      biker {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
+      photographer {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
+      messages {
+        nextToken
+        __typename
+      }
       createdAt
       updatedAt
+      __typename
     }
   }
 `;
-
 export const updateConversation = /* GraphQL */ `
-  mutation UpdateConversation($input: UpdateConversationInput!) {
-    updateConversation(input: $input) {
+  mutation UpdateConversation(
+    $input: UpdateConversationInput!
+    $condition: ModelConversationConditionInput
+  ) {
+    updateConversation(input: $input, condition: $condition) {
       id
       biker_id
       photographer_id
@@ -118,23 +355,132 @@ export const updateConversation = /* GraphQL */ `
       last_message
       last_message_at
       status
+      completed_by
+      biker {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
+      photographer {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
+      messages {
+        nextToken
+        __typename
+      }
       createdAt
       updatedAt
+      __typename
     }
   }
 `;
-
 export const deleteConversation = /* GraphQL */ `
-  mutation DeleteConversation($input: DeleteConversationInput!) {
-    deleteConversation(input: $input) {
+  mutation DeleteConversation(
+    $input: DeleteConversationInput!
+    $condition: ModelConversationConditionInput
+  ) {
+    deleteConversation(input: $input, condition: $condition) {
       id
+      biker_id
+      photographer_id
+      biker_name
+      photographer_name
+      last_message
+      last_message_at
+      status
+      completed_by
+      biker {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
+      photographer {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
+      messages {
+        nextToken
+        __typename
+      }
+      createdAt
+      updatedAt
+      __typename
     }
   }
 `;
-
 export const createMessage = /* GraphQL */ `
-  mutation CreateMessage($input: CreateMessageInput!) {
-    createMessage(input: $input) {
+  mutation CreateMessage(
+    $input: CreateMessageInput!
+    $condition: ModelMessageConditionInput
+  ) {
+    createMessage(input: $input, condition: $condition) {
       id
       conversationID
       sender_id
@@ -142,14 +488,53 @@ export const createMessage = /* GraphQL */ `
       media_key
       media_type
       is_read
+      conversation {
+        id
+        biker_id
+        photographer_id
+        biker_name
+        photographer_name
+        last_message
+        last_message_at
+        status
+        completed_by
+        createdAt
+        updatedAt
+        __typename
+      }
+      sender {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
       createdAt
+      updatedAt
+      __typename
     }
   }
 `;
-
 export const updateMessage = /* GraphQL */ `
-  mutation UpdateMessage($input: UpdateMessageInput!) {
-    updateMessage(input: $input) {
+  mutation UpdateMessage(
+    $input: UpdateMessageInput!
+    $condition: ModelMessageConditionInput
+  ) {
+    updateMessage(input: $input, condition: $condition) {
       id
       conversationID
       sender_id
@@ -157,52 +542,278 @@ export const updateMessage = /* GraphQL */ `
       media_key
       media_type
       is_read
+      conversation {
+        id
+        biker_id
+        photographer_id
+        biker_name
+        photographer_name
+        last_message
+        last_message_at
+        status
+        completed_by
+        createdAt
+        updatedAt
+        __typename
+      }
+      sender {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
       createdAt
+      updatedAt
+      __typename
     }
   }
 `;
-
 export const deleteMessage = /* GraphQL */ `
-  mutation DeleteMessage($input: DeleteMessageInput!) {
-    deleteMessage(input: $input) {
+  mutation DeleteMessage(
+    $input: DeleteMessageInput!
+    $condition: ModelMessageConditionInput
+  ) {
+    deleteMessage(input: $input, condition: $condition) {
       id
+      conversationID
+      sender_id
+      content
+      media_key
+      media_type
+      is_read
+      conversation {
+        id
+        biker_id
+        photographer_id
+        biker_name
+        photographer_name
+        last_message
+        last_message_at
+        status
+        completed_by
+        createdAt
+        updatedAt
+        __typename
+      }
+      sender {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
+      createdAt
+      updatedAt
+      __typename
     }
   }
 `;
-
 export const createReview = /* GraphQL */ `
-  mutation CreateReview($input: CreateReviewInput!) {
-    createReview(input: $input) {
+  mutation CreateReview(
+    $input: CreateReviewInput!
+    $condition: ModelReviewConditionInput
+  ) {
+    createReview(input: $input, condition: $condition) {
       id
       reviewer_id
       reviewee_id
       conversation_id
       rating
       comment
+      reviewer {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
+      reviewee {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
       createdAt
+      updatedAt
+      __typename
     }
   }
 `;
-
 export const updateReview = /* GraphQL */ `
-  mutation UpdateReview($input: UpdateReviewInput!) {
-    updateReview(input: $input) {
+  mutation UpdateReview(
+    $input: UpdateReviewInput!
+    $condition: ModelReviewConditionInput
+  ) {
+    updateReview(input: $input, condition: $condition) {
       id
       reviewer_id
       reviewee_id
       conversation_id
       rating
       comment
+      reviewer {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
+      reviewee {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
       createdAt
+      updatedAt
+      __typename
     }
   }
 `;
-
 export const deleteReview = /* GraphQL */ `
-  mutation DeleteReview($input: DeleteReviewInput!) {
-    deleteReview(input: $input) {
+  mutation DeleteReview(
+    $input: DeleteReviewInput!
+    $condition: ModelReviewConditionInput
+  ) {
+    deleteReview(input: $input, condition: $condition) {
       id
+      reviewer_id
+      reviewee_id
+      conversation_id
+      rating
+      comment
+      reviewer {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
+      reviewee {
+        id
+        email
+        nickname
+        user_type
+        prefecture
+        bike_maker
+        bike_model
+        bio
+        profile_image
+        genres
+        instagram_url
+        twitter_url
+        website_url
+        minimum_rate
+        rate_details
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
+      createdAt
+      updatedAt
+      __typename
     }
   }
 `;
-

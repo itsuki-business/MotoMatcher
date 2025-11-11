@@ -63,3 +63,14 @@ export const onUpdateConversation = /* GraphQL */ `
     }
   }
 `;
+
+export const onUpdateUser = /* GraphQL */ `
+  subscription OnUpdateUser($filter: ModelSubscriptionUserFilterInput) {
+    onUpdateUser(filter: $filter) {
+      id
+      profile_image
+      nickname
+      updatedAt
+    }
+  }
+`;

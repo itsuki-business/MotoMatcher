@@ -159,8 +159,8 @@ export function Layout() {
                 <div className="relative">
                   <MessageCircle className="w-5 h-5" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold pointer-events-none">
-                      {unreadCount > 9 ? '9+' : unreadCount}
+                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] rounded-full min-w-[16px] h-4 flex items-center justify-center font-bold pointer-events-none px-1">
+                      NEW
                     </span>
                   )}
                 </div>
@@ -264,8 +264,8 @@ export function Layout() {
                 <div className="relative">
                   <MessageCircle className="w-5 h-5" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold pointer-events-none">
-                      {unreadCount > 9 ? '9+' : unreadCount}
+                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] rounded-full min-w-[16px] h-4 flex items-center justify-center font-bold pointer-events-none px-1">
+                      NEW
                     </span>
                   )}
                 </div>

@@ -15,6 +15,7 @@ import { useMock } from '@/config/environment';
 import { useUnreadCount } from '@/contexts/UnreadContext';
 import * as queries from '@/graphql/queries';
 import * as mutations from '@/graphql/mutations';
+import * as subscriptions from '@/graphql/subscriptions';
 
 export function MessageList() {
   const navigate = useNavigate();
@@ -35,14 +36,62 @@ export function MessageList() {
     filterConversations();
   }, [conversations, searchQuery]);
 
-  // Poll for conversation updates every 3 seconds
+  // Reload conversations when page becomes visible
   useEffect(() => {
-    const interval = setInterval(() => {
-      loadConversations(false); // Don't show loading spinner on background updates
-    }, 3000);
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadConversations(false);
+      }
+    };
 
-    return () => clearInterval(interval);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [myUserId]);
+
+  // Subscribe to user profile updates (AWS only)
+  useEffect(() => {
+    if (useMock || !conversations.length) return;
+
+    let subscription;
+    const setupSubscription = async () => {
+      try {
+        const { generateClient } = await import('aws-amplify/api');
+        const client = generateClient();
+        
+        subscription = client.graphql({
+          query: subscriptions.onUpdateUser
+        }).subscribe({
+          next: ({ data }) => {
+            const updatedUser = data.onUpdateUser;
+            
+            setConversations(prev => prev.map(conv => {
+              const otherUserId = conv.biker_id === myUserId ? conv.photographer_id : conv.biker_id;
+              if (otherUserId === updatedUser.id && updatedUser.profile_image) {
+                (async () => {
+                  try {
+                    const { getUrl } = await import('aws-amplify/storage');
+                    const urlResult = await getUrl({ path: updatedUser.profile_image });
+                    setConversations(current => current.map(c => 
+                      c.id === conv.id ? { ...c, profileImageUrl: urlResult.url.href } : c
+                    ));
+                  } catch (error) {
+                    console.error('Error loading updated profile image:', error);
+                  }
+                })();
+              }
+              return conv;
+            }));
+          },
+          error: (error) => console.error('Subscription error:', error)
+        });
+      } catch (error) {
+        console.error('Setup subscription error:', error);
+      }
+    };
+
+    setupSubscription();
+    return () => subscription?.unsubscribe();
+  }, [conversations, myUserId]);
 
   const loadCurrentUser = async () => {
     try {
@@ -106,15 +155,17 @@ export function MessageList() {
       }
 
       // Load profile images and check for unread messages
-      const conversationsWithImages = await Promise.all(
-        conversationsList.map(async (conversation) => {
-          const otherUserId = conversation.biker_id === myUserId 
-            ? conversation.photographer_id 
-            : conversation.biker_id;
-          
-          let userData;
-          let profileImageUrl = null;
-          
+      const conversationsWithImages = [];
+      
+      for (const conversation of conversationsList) {
+        const otherUserId = conversation.biker_id === myUserId 
+          ? conversation.photographer_id 
+          : conversation.biker_id;
+        
+        let userData;
+        let profileImageUrl = null;
+        
+        try {
           if (useMock) {
             userData = await mockAPIService.mockGetUser(otherUserId);
             if (userData?.profile_image) {
@@ -135,42 +186,53 @@ export function MessageList() {
               profileImageUrl = urlResult.url.href;
             }
           }
+        } catch (error) {
+          console.error('Error loading user data:', error);
+        }
 
-          // Check for unread messages
-          let hasUnread = false;
-          try {
-            let messages = [];
-            if (useMock) {
-              const result = await mockAPIService.mockListMessages(conversation.id);
-              messages = result.items || [];
-            } else {
-              const { generateClient } = await import('aws-amplify/api');
-              const client = generateClient();
-              const result = await client.graphql({
-                query: queries.messagesByConversation,
-                variables: { conversationID: conversation.id }
-              });
-              messages = result.data.messagesByConversation.items || [];
-            }
-            
-            // Check if there are any unread messages from the other user
-            hasUnread = messages.some(m => 
-              m.sender_id !== myUserId && !m.is_read
-            );
-          } catch (error) {
-            console.error('Error checking unread messages:', error);
+        // Check for unread messages
+        let hasUnread = false;
+        try {
+          let messages = [];
+          if (useMock) {
+            const result = await mockAPIService.mockListMessages(conversation.id);
+            messages = result.items || [];
+          } else {
+            const { generateClient } = await import('aws-amplify/api');
+            const client = generateClient();
+            const result = await client.graphql({
+              query: queries.messagesByConversation,
+              variables: { conversationID: conversation.id }
+            });
+            messages = result.data.messagesByConversation.items || [];
           }
+          
+          // Check if there are any unread messages from the other user
+          hasUnread = messages.some(m => 
+            m.sender_id !== myUserId && !m.is_read
+          );
+        } catch (error) {
+          console.error('Error checking unread messages:', error);
+        }
 
-          return {
-            ...conversation,
-            otherUser: userData,
-            profileImageUrl,
-            hasUnread
-          };
-        })
-      );
+        conversationsWithImages.push({
+          ...conversation,
+          otherUser: userData,
+          profileImageUrl,
+          hasUnread
+        });
+      }
 
-      setConversations(conversationsWithImages);
+      setConversations(prev => {
+        // 既存の会話のprofileImageUrlを保持
+        return conversationsWithImages.map(newConv => {
+          const existingConv = prev.find(c => c.id === newConv.id);
+          if (existingConv && existingConv.profileImageUrl && !newConv.profileImageUrl) {
+            return { ...newConv, profileImageUrl: existingConv.profileImageUrl };
+          }
+          return newConv;
+        });
+      });
     } catch (error) {
       console.error('Load conversations error:', error);
     } finally {
@@ -246,7 +308,7 @@ export function MessageList() {
       }
       
       // レビュー画面に遷移
-      navigate(`/messages/${myUserId}/${otherUserId}/review`, { 
+      navigate('/review-complete', { 
         state: { 
           conversation,
           otherUserId,

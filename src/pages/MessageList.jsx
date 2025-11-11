@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MessageCircle, Search } from 'lucide-react';
+import { MessageCircle, Search, AlertCircle } from 'lucide-react'; // AlertCircle をインポート
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -11,7 +11,8 @@ import { formatDate } from '@/lib/utils';
 import { useUnreadCount } from '@/contexts/UnreadContext';
 import * as queries from '@/graphql/queries';
 import * as mutations from '@/graphql/mutations';
-import * as subscriptions from '@/graphql/subscriptions';
+// --- 修正: subscriptions は不要になったため削除 ---
+// import * as subscriptions from '@/graphql/subscriptions';
 
 // Mock imports (useMock = true の場合のみ)
 import { mockAPIService } from '@/services/mockAPIService';
@@ -28,12 +29,14 @@ export function MessageList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [appUser, setAppUser] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  
+  // --- ▼ 修正: エラーハンドリング用のStateを追加 ▼ ---
+  const [error, setError] = useState(null);
 
   const loadCurrentUser = async () => {
     try {
       if (useMock) {
-        // Mock環境のユーザー取得ロジックは現状ないためスキップ
-        // 必要に応じて mockAuthService.getCurrentUser() と mockAPIService.mockGetUser() を呼ぶ
+        // Mock
       } else {
         const { getCurrentUser } = await import('aws-amplify/auth');
         const currentUser = await getCurrentUser();
@@ -51,10 +54,14 @@ export function MessageList() {
       }
     } catch (error) {
       console.error('Load current user error:', error);
+      // --- ▼ 修正: エラーをセット ▼ ---
+      setError('ユーザー情報の読み込みに失敗しました: ' + error.message);
     }
   };
 
   const loadConversations = async (showLoading = true) => {
+    // 既存のエラーをクリア
+    setError(null);
     try {
       if (showLoading) {
         setLoading(true);
@@ -127,6 +134,7 @@ export function MessageList() {
           }
         } catch (error) {
           console.error('Error loading conversation details:', error);
+          // 個別の会話読み込みエラーは継続
         }
 
         conversationsWithData.push({
@@ -137,16 +145,20 @@ export function MessageList() {
         });
       }
 
-      // --- ▼ 修正箇所 スタート ▼ ---
       // 会話を最終メッセージ時刻でソート
       conversationsWithData.sort((a, b) => 
         new Date(b.last_message_at) - new Date(a.last_message_at)
       );
-      // --- ▲ 修正箇所 エンド ▲ ---
 
       setConversations(conversationsWithData);
+      
+      // --- ▼ 修正: グローバルの未読数もここで更新 ▼ ---
+      refreshUnreadCount();
+
     } catch (error) {
       console.error('Load conversations error:', error);
+      // --- ▼ 修正: エラーをセット ▼ ---
+      setError('会話の読み込みに失敗しました: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -182,9 +194,7 @@ export function MessageList() {
         loadConversations(false);
       }
     };
-
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
@@ -192,101 +202,17 @@ export function MessageList() {
   }, [myUserId]);
 
 
-  // --- ▼ 修正箇所 スタート (サブスクリプションのロジック全体) ▼ ---
+  // --- ▼ 修正: リアルタイム更新をサブスクリプションからポーリングに変更 ▼ ---
   useEffect(() => {
-    if (useMock) {
-      // Mock環境ではサブスクリプションの代わりにポーリングなどで対応する
-      // (現在は未実装だが、ヘッダーのポーリングで代用される)
-      return;
-    }
-
-    let createSubscription;
-    let updateSubscription;
-    
-    const setupSubscription = async () => {
-      try {
-        const { generateClient } = await import('aws-amplify/api');
-        const client = generateClient();
-        
-        // 1. 新しいメッセージ（未読）を検知するサブスクリプション
-        createSubscription = client.graphql({
-          query: subscriptions.onCreateMessage
-        }).subscribe({
-          next: ({ data }) => {
-            const newMessage = data.onCreateMessage;
-            
-            // 自分宛のメッセージか、該当する会話がリストにあるか確認
-            if (newMessage.sender_id !== myUserId) {
-              setConversations(prev => {
-                const targetConvIndex = prev.findIndex(c => c.id === newMessage.conversationID);
-                
-                if (targetConvIndex > -1) {
-                  // 該当の会話の未読数をインクリメントして状態を更新
-                  const updatedConvs = [...prev];
-                  const targetConv = { ...updatedConvs[targetConvIndex] };
-                  targetConv.unreadCount = (targetConv.unreadCount || 0) + 1;
-                  targetConv.last_message = newMessage.content || '[画像]';
-                  targetConv.last_message_at = newMessage.createdAt;
-                  updatedConvs[targetConvIndex] = targetConv;
-                  
-                  // 未読メッセージが届いたらリストの先頭に持ってくる（ソート）
-                  updatedConvs.sort((a, b) => new Date(b.last_message_at) - new Date(a.last_message_at));
-                  
-                  refreshUnreadCount(); // グローバルな未読数も更新
-                  return updatedConvs;
-                }
-                return prev;
-              });
-            }
-          },
-          error: (error) => console.error('onCreateMessage Subscription error:', error)
-        });
-
-        // 2. 既読更新を検知するサブスクリプション
-        updateSubscription = client.graphql({
-          query: subscriptions.onUpdateMessage
-        }).subscribe({
-          next: async ({ data }) => {
-            const updatedMessage = data.onUpdateMessage;
-            
-            // メッセージが既読になった場合
-            if (updatedMessage.is_read) {
-              try {
-                // 該当の会話の未読数を再計算
-                const result = await client.graphql({
-                  query: queries.messagesByConversation,
-                  variables: { conversationID: updatedMessage.conversationID }
-                });
-                const messages = result.data.messagesByConversation.items || [];
-                
-                const unreadCount = messages.filter(m => 
-                  m.sender_id !== myUserId && !m.is_read
-                ).length;
-                
-                setConversations(prev => prev.map(conv => 
-                  conv.id === updatedMessage.conversationID ? { ...conv, unreadCount } : conv
-                ));
-                
-                refreshUnreadCount(); // グローバルな未読数も更新
-              } catch (error) {
-                console.error('Error recalculating unread count on update:', error);
-              }
-            }
-          },
-          error: (error) => console.error('onUpdateMessage Subscription error:', error)
-        });
-      } catch (error) {
-        console.error('Setup subscription error:', error);
+    // 5秒ごとに会話リストと未読数を再取得
+    const interval = setInterval(() => {
+      if (!document.hidden) { // 画面がアクティブな時だけ
+        loadConversations(false); // false = ローディングスピナー非表示
       }
-    };
-
-    setupSubscription();
+    }, 5000); // 5秒
     
-    return () => {
-      createSubscription?.unsubscribe();
-      updateSubscription?.unsubscribe();
-    };
-  }, [myUserId, refreshUnreadCount, useMock]); // useMock を依存配列に追加
+    return () => clearInterval(interval);
+  }, [myUserId]); // myUserId が変わった時のみタイマーを再設定
   // --- ▲ 修正箇所 エンド ▲ ---
 
 
@@ -411,6 +337,16 @@ export function MessageList() {
             </div>
           </div>
 
+          {/* --- ▼ 修正: エラー表示 ▼ --- */}
+          {error && (
+            <Card className="mb-4 border-destructive bg-destructive/10">
+              <CardContent className="p-4 flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-destructive" />
+                <p className="text-sm text-destructive-foreground">{error}</p>
+              </CardContent>
+            </Card>
+          )}
+
           {filteredConversationsToShow.length > 0 ? (
             <>
               <div className="mb-4 text-sm text-muted-foreground">
@@ -445,7 +381,7 @@ export function MessageList() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
                               <h3 className="font-semibold truncate">
-                                {otherName}
+                                {otherName || '不明なユーザー'}
                               </h3>
                               <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
                                 {formatDate(conversation.last_message_at)}
@@ -463,8 +399,7 @@ export function MessageList() {
                           )}
                         </div>
 
-                        {/* アクションボタンはMock環境では表示しない（appUserがロードされないため） */}
-                        {!useMock && appUser && (
+                        {appUser && (
                           <ConversationActions
                             conversation={conversation}
                             onComplete={handleComplete}
@@ -473,7 +408,6 @@ export function MessageList() {
                             appUser={appUser}
                           />
                         )}
-                        {/* Mock環境用の仮表示（必要に応じて） */}
                         {useMock && (
                            <ConversationActions
                             conversation={conversation}
@@ -491,16 +425,18 @@ export function MessageList() {
               </div>
             </>
           ) : (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <MessageCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">
-                  {searchQuery 
-                    ? '検索結果が見つかりませんでした' 
-                    : 'まだメッセージがありません'}
-                </p>
-              </CardContent>
-            </Card>
+            !error && ( // エラーがない時だけ「メッセージがありません」を表示
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <MessageCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">
+                    {searchQuery 
+                      ? '検索結果が見つかりませんでした' 
+                      : 'まだメッセージがありません'}
+                  </p>
+                </CardContent>
+              </Card>
+            )
           )}
         </motion.div>
       </div>

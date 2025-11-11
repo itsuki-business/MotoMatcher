@@ -88,11 +88,21 @@ export function MessageList() {
       } else {
         const { generateClient } = await import('aws-amplify/api');
         const client = generateClient();
-        const result = await client.graphql({
-          query: queries.listConversations,
+        
+        const bikerConvs = await client.graphql({
+          query: queries.conversationsByBiker,
           variables: { biker_id: myUserId }
         });
-        conversationsList = result.data.listConversations.items;
+        
+        const photographerConvs = await client.graphql({
+          query: queries.conversationsByPhotographer,
+          variables: { photographer_id: myUserId }
+        });
+        
+        conversationsList = [
+          ...(bikerConvs.data.conversationsByBiker?.items || []),
+          ...(photographerConvs.data.conversationsByPhotographer?.items || [])
+        ];
       }
 
       // Load profile images and check for unread messages

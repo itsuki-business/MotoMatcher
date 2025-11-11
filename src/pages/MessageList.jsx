@@ -8,10 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ConversationActions } from '@/components/messages/ConversationActions';
 import { formatDate } from '@/lib/utils';
-import { mockAPIService } from '@/services/mockAPIService';
-import { mockStorageService } from '@/services/mockStorageService';
-import { mockAuthService } from '@/services/mockAuthService';
-import { useMock } from '@/config/environment';
+
 import { useUnreadCount } from '@/contexts/UnreadContext';
 import * as queries from '@/graphql/queries';
 import * as mutations from '@/graphql/mutations';
@@ -30,29 +27,18 @@ export function MessageList() {
 
   const loadCurrentUser = async () => {
     try {
-      let currentUser;
-      if (useMock) {
-        currentUser = await mockAuthService.getCurrentUser();
-      } else {
-        const { getCurrentUser } = await import('aws-amplify/auth');
-        currentUser = await getCurrentUser();
-      }
+      const { getCurrentUser } = await import('aws-amplify/auth');
+      const currentUser = await getCurrentUser();
 
       if (currentUser) {
         const userId = currentUser.userId || currentUser.sub;
-        let userData;
-        if (useMock) {
-          userData = await mockAPIService.mockGetUser(userId);
-        } else {
-          const { generateClient } = await import('aws-amplify/api');
-          const client = generateClient();
-          const result = await client.graphql({
-            query: queries.getUser,
-            variables: { id: userId }
-          });
-          userData = result.data.getUser;
-        }
-        setAppUser(userData);
+        const { generateClient } = await import('aws-amplify/api');
+        const client = generateClient();
+        const result = await client.graphql({
+          query: queries.getUser,
+          variables: { id: userId }
+        });
+        setAppUser(result.data.getUser);
       }
     } catch (error) {
       console.error('Load current user error:', error);
@@ -65,29 +51,23 @@ export function MessageList() {
         setLoading(true);
       }
       
-      let conversationsList;
-      if (useMock) {
-        const result = await mockAPIService.mockListConversations(myUserId);
-        conversationsList = result.items;
-      } else {
-        const { generateClient } = await import('aws-amplify/api');
-        const client = generateClient();
-        
-        const bikerConvs = await client.graphql({
-          query: queries.conversationsByBiker,
-          variables: { biker_id: myUserId }
-        });
-        
-        const photographerConvs = await client.graphql({
-          query: queries.conversationsByPhotographer,
-          variables: { photographer_id: myUserId }
-        });
-        
-        conversationsList = [
-          ...(bikerConvs.data.conversationsByBiker?.items || []),
-          ...(photographerConvs.data.conversationsByPhotographer?.items || [])
-        ];
-      }
+      const { generateClient } = await import('aws-amplify/api');
+      const client = generateClient();
+      
+      const bikerConvs = await client.graphql({
+        query: queries.conversationsByBiker,
+        variables: { biker_id: myUserId }
+      });
+      
+      const photographerConvs = await client.graphql({
+        query: queries.conversationsByPhotographer,
+        variables: { photographer_id: myUserId }
+      });
+      
+      const conversationsList = [
+        ...(bikerConvs.data.conversationsByBiker?.items || []),
+        ...(photographerConvs.data.conversationsByPhotographer?.items || [])
+      ];
 
       const conversationsWithImages = [];
       
@@ -100,25 +80,16 @@ export function MessageList() {
         let profileImageUrl = null;
         
         try {
-          if (useMock) {
-            userData = await mockAPIService.mockGetUser(otherUserId);
-            if (userData?.profile_image) {
-              profileImageUrl = await mockStorageService.getImageUrl(userData.profile_image);
-            }
-          } else {
-            const { generateClient } = await import('aws-amplify/api');
-            const client = generateClient();
-            const result = await client.graphql({
-              query: queries.getUser,
-              variables: { id: otherUserId }
-            });
-            userData = result.data.getUser;
-            
-            if (userData?.profile_image) {
-              const { getUrl } = await import('aws-amplify/storage');
-              const urlResult = await getUrl({ path: userData.profile_image });
-              profileImageUrl = urlResult.url.href;
-            }
+          const result = await client.graphql({
+            query: queries.getUser,
+            variables: { id: otherUserId }
+          });
+          userData = result.data.getUser;
+          
+          if (userData?.profile_image) {
+            const { getUrl } = await import('aws-amplify/storage');
+            const urlResult = await getUrl({ path: userData.profile_image });
+            profileImageUrl = urlResult.url.href;
           }
         } catch (error) {
           console.error('Error loading user data:', error);
@@ -126,19 +97,11 @@ export function MessageList() {
 
         let hasUnread = false;
         try {
-          let messages = [];
-          if (useMock) {
-            const result = await mockAPIService.mockListMessages(conversation.id);
-            messages = result.items || [];
-          } else {
-            const { generateClient } = await import('aws-amplify/api');
-            const client = generateClient();
-            const result = await client.graphql({
-              query: queries.messagesByConversation,
-              variables: { conversationID: conversation.id }
-            });
-            messages = result.data.messagesByConversation.items || [];
-          }
+          const result = await client.graphql({
+            query: queries.messagesByConversation,
+            variables: { conversationID: conversation.id }
+          });
+          const messages = result.data.messagesByConversation.items || [];
           
           hasUnread = messages.some(m => 
             m.sender_id !== myUserId && !m.is_read
@@ -224,73 +187,88 @@ export function MessageList() {
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [myUserId]);
 
   // Subscribe to message updates to remove NEW badge in real-time
   useEffect(() => {
-    if (!conversations.length) return;
-
     let subscription;
     
     const setupSubscription = async () => {
       try {
-        if (useMock) {
-          const handleMessagesRead = (event) => {
-            const { conversationId } = event.detail;
-            setConversations(prev => prev.map(conv => 
-              conv.id === conversationId ? { ...conv, hasUnread: false } : conv
-            ));
-          };
-          
-          window.addEventListener('messagesRead', handleMessagesRead);
-          return () => window.removeEventListener('messagesRead', handleMessagesRead);
-        } else {
-          const { generateClient } = await import('aws-amplify/api');
-          const client = generateClient();
-          
-          subscription = client.graphql({
-            query: subscriptions.onUpdateMessage
-          }).subscribe({
-            next: ({ data }) => {
-              const updatedMessage = data.onUpdateMessage;
-              if (updatedMessage.is_read) {
+        const { generateClient } = await import('aws-amplify/api');
+        const client = generateClient();
+        
+        subscription = client.graphql({
+          query: subscriptions.onUpdateMessage
+        }).subscribe({
+          next: async ({ data }) => {
+            const updatedMessage = data.onUpdateMessage;
+            console.log('Message update received:', updatedMessage);
+            
+            // メッセージが既読になった場合
+            if (updatedMessage.is_read) {
+              console.log('Message marked as read, updating conversation:', updatedMessage.conversationID);
+              
+              // 該当する会話の未読メッセージを再確認
+              try {
+                const result = await client.graphql({
+                  query: queries.messagesByConversation,
+                  variables: { conversationID: updatedMessage.conversationID }
+                });
+                const messages = result.data.messagesByConversation.items || [];
+                
+                // 自分宛ての未読メッセージがあるかチェック
+                const hasUnread = messages.some(m => 
+                  m.sender_id !== myUserId && !m.is_read
+                );
+                
+                console.log('Unread status for conversation:', hasUnread);
+                
+                // 会話リストを更新
                 setConversations(prev => prev.map(conv => {
                   if (conv.id === updatedMessage.conversationID) {
-                    return { ...conv, hasUnread: false };
+                    return { ...conv, hasUnread };
                   }
                   return conv;
                 }));
+              } catch (error) {
+                console.error('Error checking unread messages:', error);
               }
-            },
-            error: (error) => console.error('Subscription error:', error)
-          });
-        }
+            }
+          },
+          error: (error) => console.error('Subscription error:', error)
+        });
+        
+        console.log('Message update subscription established');
       } catch (error) {
         console.error('Setup subscription error:', error);
       }
     };
 
-    const cleanup = setupSubscription();
+    setupSubscription();
+    
     return () => {
-      if (cleanup instanceof Promise) {
-        cleanup.then(fn => fn && fn()).catch(err => console.error('Cleanup error:', err));
-      } else {
-        subscription?.unsubscribe();
+      if (subscription) {
+        console.log('Unsubscribing from message updates');
+        subscription.unsubscribe();
       }
     };
-  }, [myUserId, useMock]);
+  }, [myUserId]);
 
 
 
-  const handleConversationClick = (conversation) => {
+  const handleConversationClick = async (conversation) => {
     const otherUserId = conversation.biker_id === myUserId 
       ? conversation.photographer_id 
       : conversation.biker_id;
     
     navigate(`/messages/${myUserId}/${otherUserId}`, {
-      state: { from: 'messageList' }
+      state: { from: 'messageList', conversationId: conversation.id }
     });
   };
 
@@ -327,23 +305,13 @@ export function MessageList() {
 
   const handleCancel = async (conversation) => {
     try {
-      // 会話を削除
-      if (useMock) {
-        // Mock環境での削除処理
-        const data = JSON.parse(localStorage.getItem('mockAPIData') || '{}');
-        data.conversations = data.conversations.filter(c => c.id !== conversation.id);
-        data.messages = data.messages.filter(m => m.conversationID !== conversation.id);
-        localStorage.setItem('mockAPIData', JSON.stringify(data));
-      } else {
-        const { generateClient } = await import('aws-amplify/api');
-        const client = generateClient();
-        await client.graphql({
-          query: mutations.deleteConversation,
-          variables: { input: { id: conversation.id } }
-        });
-      }
+      const { generateClient } = await import('aws-amplify/api');
+      const client = generateClient();
+      await client.graphql({
+        query: mutations.deleteConversation,
+        variables: { input: { id: conversation.id } }
+      });
 
-      // 会話リストを再読み込み
       await loadConversations();
     } catch (error) {
       console.error('Cancel conversation error:', error);

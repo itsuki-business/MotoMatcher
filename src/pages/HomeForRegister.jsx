@@ -53,31 +53,34 @@ export function HomeForRegister() {
   const loadPhotographers = async () => {
     try {
       setLoading(true);
-      
+
       if (useMock) {
         const result = await mockAPIService.mockListPhotographers();
         console.log('Mock photographers loaded:', result.items);
-        setPhotographers(result.items);
-      } else {
-        const { generateClient } = await import('aws-amplify/api');
-        const client = generateClient();
-        
-        // listUsersクエリを使用してフォトグラファーを取得
-        const result = await client.graphql({
-          query: queries.listUsers,
-          variables: {
-            filter: { 
-              user_type: { eq: 'photographer' }
-            }
-          }
-        });
-        
-        console.log('Photographers loaded from API:', result.data.listUsers.items);
-        setPhotographers(result.data.listUsers.items || []);
+        setPhotographers(result.items || []);
+        return;
       }
+
+      // aws-amplify の標準 API を使う（generateClient の挙動依存を避ける）
+      const { API } = await import('aws-amplify');
+      console.log('queries object:', queries);
+      console.log('queries.listUsers:', queries?.listUsers);
+
+      if (!queries?.listUsers) {
+        throw new Error('queries.listUsers が見つかりません。queries を確認してください。');
+      }
+
+      const resp = await API.graphql({
+        query: queries.listUsers,
+        variables: { filter: { user_type: { eq: 'photographer' } } },
+        authMode: 'AMAZON_COGNITO_USER_POOLS' // 本番なら適切な authMode を指定
+      });
+
+      console.log('API.graphql response:', resp);
+      const items = resp?.data?.listUsers?.items || [];
+      setPhotographers(items);
     } catch (error) {
       console.error('Load photographers error:', error);
-      // エラー時は空配列を設定
       setPhotographers([]);
     } finally {
       setLoading(false);

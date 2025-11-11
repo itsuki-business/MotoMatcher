@@ -64,7 +64,7 @@ type Conversation @model @auth(rules: [
   last_message: String
   last_message_at: AWSDateTime
   status: String
-  completed_by: [String] # <-- この行を追加してください
+  completed_by: [String] # <-- ★★★ 修正箇所 ★★★
   
   biker: User @belongsTo(fields: ["biker_id"])
   photographer: User @belongsTo(fields: ["photographer_id"])
@@ -76,7 +76,7 @@ type Conversation @model @auth(rules: [
 
 type Message @model @auth(rules: [
   { allow: owner, ownerField: "sender_id" },
-  { allow: private, operations: [read, update] }
+  { allow: private, operations: [read, update] } # <-- (前回の「NEWバッジ」修正箇所)
 ]) {
   id: ID!
   conversationID: ID! @index(name: "byConversation", sortKeyFields: ["createdAt"], queryField: "messagesByConversation")

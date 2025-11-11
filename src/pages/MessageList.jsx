@@ -73,18 +73,22 @@ export function MessageList() {
       const conversationsWithData = [];
       const client = useMock ? null : (await import('aws-amplify/api')).generateClient();
 
+      if (!myUserId) {
+        throw new Error('ユーザーIDが未定義です。');
+      }
+
       if (useMock) {
         const result = await mockAPIService.mockListConversations(myUserId);
         conversationsList = result.items || [];
       } else {
         const bikerConvs = await client.graphql({
           query: queries.conversationsByBiker,
-          variables: { biker_id: myUserId }
+          variables: { biker_id: myUserId } // 修正: 必須変数を確認
         });
         
         const photographerConvs = await client.graphql({
           query: queries.conversationsByPhotographer,
-          variables: { photographer_id: myUserId }
+          variables: { photographer_id: myUserId } // 修正: 必須変数を確認
         });
         
         conversationsList = [

@@ -20,6 +20,10 @@ export function HomeForRegister() {
     maxRate: ''
   });
 
+  // 追加 state: API の生レスポンスとエラーを保持して画面で確認できるようにする
+  const [rawApiResponse, setRawApiResponse] = useState(null);
+  const [apiError, setApiError] = useState(null);
+
   useEffect(() => {
     checkUserProfile();
   }, []);
@@ -53,10 +57,13 @@ export function HomeForRegister() {
   const loadPhotographers = async () => {
     try {
       setLoading(true);
+      setApiError(null);
+      setRawApiResponse(null);
 
       if (useMock) {
         const result = await mockAPIService.mockListPhotographers();
         console.log('Mock photographers loaded:', result.items?.length);
+        setRawApiResponse(result);
         setPhotographers(result.items || []);
         return;
       }
@@ -65,7 +72,10 @@ export function HomeForRegister() {
       console.log('queries object:', queries);
       const queryCandidate = queries?.listUsers || queries?.listPhotographers;
       if (!queryCandidate) {
-        throw new Error('GraphQL query not found: check import of src/graphql/queries');
+        const err = new Error('GraphQL query not found: check import of src/graphql/queries');
+        console.error(err);
+        setApiError(err.message);
+        throw err;
       }
       console.log('Using query:', queryCandidate?.definitions?.[0]?.name?.value || 'unknown');
 
@@ -74,7 +84,10 @@ export function HomeForRegister() {
       const API = amplifyModule?.API || amplifyModule?.default?.API;
       console.log('Amplify API object:', API);
       if (!API || typeof API.graphql !== 'function') {
-        throw new Error('API.graphql is not available. Check aws-amplify import/version/configuration.');
+        const err = new Error('API.graphql is not available. Check aws-amplify import/version/configuration.');
+        console.error(err);
+        setApiError(err.message);
+        throw err;
       }
 
       // 実行（authMode は本番環境に合わせて変更）
@@ -85,11 +98,14 @@ export function HomeForRegister() {
       });
 
       console.log('API.graphql response:', resp);
+      setRawApiResponse(resp);
+
       const items = resp?.data?.listUsers?.items || resp?.data?.listPhotographers?.items || [];
       console.log('Loaded photographers count:', items.length);
       setPhotographers(items);
     } catch (error) {
       console.error('Load photographers error:', error);
+      setApiError(error?.message || String(error));
       setPhotographers([]);
     } finally {
       setLoading(false);
@@ -135,7 +151,10 @@ export function HomeForRegister() {
         // フォトグラファーに最低料金が設定されている場合のみフィルタリング
         // 料金未設定の場合は表示する（料金を気にしない）
         if (!p.minimum_rate) return true;
-        return p.minimum_rate <= maxRateNum;
+        // 文字列の "5000" などに備えて数値変換する
+        const minRateNum = Number(p.minimum_rate);
+        if (Number.isNaN(minRateNum)) return true; // 値がおかしければ除外せず表示
+        return minRateNum <= maxRateNum;
       });
       console.log('After rate filter:', filtered.length, 'Max rate:', filters.maxRate);
     }
@@ -242,6 +261,19 @@ export function HomeForRegister() {
             <div className="text-center py-12 text-muted-foreground">
               <p>条件に合うフォトグラファーが見つかりませんでした</p>
               <p className="text-sm mt-2">フィルターを変更してお試しください</p>
+
+              {/* デバッグ情報（結果0件時またはエラー時に表示） */}
+              {(apiError || rawApiResponse) && (
+                <div className="mt-6 text-left bg-gray-50 p-4 rounded border">
+                  <div className="text-sm font-medium mb-2">デバッグ情報</div>
+                  {apiError && (
+                    <div className="text-xs text-red-600 mb-2">APIエラー: {apiError}</div>
+                  )}
+                  {rawApiResponse && (
+                    <pre className="text-xs overflow-auto max-h-48 bg-white p-2 rounded border">{JSON.stringify(rawApiResponse, null, 2)}</pre>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

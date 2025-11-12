@@ -56,28 +56,37 @@ export function HomeForRegister() {
 
       if (useMock) {
         const result = await mockAPIService.mockListPhotographers();
-        console.log('Mock photographers loaded:', result.items);
+        console.log('Mock photographers loaded:', result.items?.length);
         setPhotographers(result.items || []);
         return;
       }
 
-      // aws-amplify の標準 API を使う（generateClient の挙動依存を避ける）
-      const { API } = await import('aws-amplify');
+      // queries の存在確認
       console.log('queries object:', queries);
-      console.log('queries.listUsers:', queries?.listUsers);
+      const queryCandidate = queries?.listUsers || queries?.listPhotographers;
+      if (!queryCandidate) {
+        throw new Error('GraphQL query not found: check import of src/graphql/queries');
+      }
+      console.log('Using query:', queryCandidate?.definitions?.[0]?.name?.value || 'unknown');
 
-      if (!queries?.listUsers) {
-        throw new Error('queries.listUsers が見つかりません。queries を確認してください。');
+      // aws-amplify の API を確実に取得
+      const amplifyModule = await import('aws-amplify');
+      const API = amplifyModule?.API || amplifyModule?.default?.API;
+      console.log('Amplify API object:', API);
+      if (!API || typeof API.graphql !== 'function') {
+        throw new Error('API.graphql is not available. Check aws-amplify import/version/configuration.');
       }
 
+      // 実行（authMode は本番環境に合わせて変更）
       const resp = await API.graphql({
-        query: queries.listUsers,
+        query: queryCandidate,
         variables: { filter: { user_type: { eq: 'photographer' } } },
-        authMode: 'AMAZON_COGNITO_USER_POOLS' // 本番なら適切な authMode を指定
+        authMode: 'AMAZON_COGNITO_USER_POOLS'
       });
 
       console.log('API.graphql response:', resp);
-      const items = resp?.data?.listUsers?.items || [];
+      const items = resp?.data?.listUsers?.items || resp?.data?.listPhotographers?.items || [];
+      console.log('Loaded photographers count:', items.length);
       setPhotographers(items);
     } catch (error) {
       console.error('Load photographers error:', error);
